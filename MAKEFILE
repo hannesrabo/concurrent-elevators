@@ -1,0 +1,14 @@
+COMPILER := gcc
+FLAGS	 := -lm -ggdb -Wall 
+DEFINES  := -DNONE
+
+SRC_FILES := src
+TARGET 	  := bin
+
+# DEFINES := -DDEBUG
+#DEFINES := -DBENCHMARK
+
+all: elevator-controler
+
+elevator-controler: main.c
+	$(COMPILER) $(DEFINES) -o $(TARGET)/$@ $(SRC_FILES)/$^ $(FLAGS)
