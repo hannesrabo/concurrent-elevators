@@ -9,14 +9,14 @@
 
 int main(int argc, char *argv[])
 {
-    /* 1. Start an input thread */
+	/* 1. Start an input thread */
 
-    /* 2. Start an elevator controller for every thread */
+	/* 2. Start an elevator controller for every thread */
 
-    /* 3. Start a work distributor */
+	/* 3. Start a work distributor */
 
-    /* 4. Do specific stuff */
+	/* 4. Do specific stuff */
 
-    // Everything went well...
-    return 0;
+	// Everything went well...
+	return 0;
 }
