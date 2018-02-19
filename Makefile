@@ -12,6 +12,7 @@ TARGET 	  := bin
 all: elevator-controler $(TARGET)/hardwareAPI.o
 
 elevator-controler: $(SRC_FILES)/main.c
+	@mkdir -p bin
 	$(COMPILER) $(DEFINES) -o $(TARGET)/$@ $^ $(FLAGS)
 
 start-elevator: elevator/lib/elevator.jar
@@ -24,7 +25,9 @@ clean:
 	rm bin/*
 
 $(TARGET)/hardwareAPI.o: $(SRC_HWAPI)/hardwareAPI.c
+	@mkdir -p bin
 	$(COMPILER) $(DEFINES) -o $@ -c $^ 
 
 hwAPI-test: $(TARGET)/hardwareAPI.o $(SRC_HWAPI)/hwAPI-test.c
+	@mkdir -p bin
 	$(COMPILER) $(DEFINES) -o $(TARGET)/hwAPI-test $(SRC_HWAPI)/hwAPI-test.c $(TARGET)/hardwareAPI.o $(FLAGS)
