@@ -14,7 +14,11 @@ all: elevator-controler
 elevator-controler: main.c
 	$(COMPILER) $(DEFINES) -o $(TARGET)/$@ $(SRC_FILES)/$^ $(FLAGS)
 
-#start-elevator: elevator/
+start-elevator: elevator/lib/elevator.jar
+	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 5 -tcp 4711
+
+start-elevator-test: elevator/lib/elevator.jar
+	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 5
 
 $(TARGET)/hardwareAPI.o: $(SRC_HWAPI)/hardwareAPI.c
 	$(COMPILER) $(DEFINES) -o $@ -c $^ 
