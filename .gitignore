@@ -54,3 +54,8 @@ dkms.conf
 
 *.swp
 
+# Mac OS X
+*.DS_Store
+
+# VS Code
+.vscode
