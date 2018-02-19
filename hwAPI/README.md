@@ -11,7 +11,8 @@ hardwareAPI.c - contains functions to control the elevators and
                 - handleScale(N, f)- sets a value f (floor number) to the scale
                             of the elevator N
                 To get a current position of the elevator N, call WhereIs(N).
-                To get velocity set for elevators, call GetSpeed().
+                To get velocity set for elevators, call GetSpeed()./
+                
                 To compile the API: gcc -c hardwareAPI.c
                 To get events from elevators (e.g. button pressings)
                 use waitForEvent.
