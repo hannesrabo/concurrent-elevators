@@ -9,8 +9,9 @@
 
 #include <stdio.h>
 
-int main() {
-	
+int main(int argc, char *argv[])
+{
+
 	// Everything went well...
 	return 0;
 }
