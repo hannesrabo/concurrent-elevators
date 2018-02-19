@@ -11,7 +11,6 @@
 
 int main(int argc, char *argv[])
 {
-
 	if (argc != 3)
 	{
 		fprintf(stderr, "Usage: %s host-name port\n", argv[0]);
