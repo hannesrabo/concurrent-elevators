@@ -1,5 +1,5 @@
 COMPILER := gcc
-FLAGS	 := -lm -ggdb -Wall -lpthread -lnsl # -lsocket  
+FLAGS	 := -lm -ggdb -Wall -lpthread #-lnsl # -lsocket  
 DEFINES  := -DNONE
 
 SRC_FILES := src
