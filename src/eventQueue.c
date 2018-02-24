@@ -26,6 +26,7 @@ void init(EventQueue *q)
 
 EventDesc front(Queue *q)
 {
+	/* Do we need mutex here? */
 	return q->front->event;
 }
 
