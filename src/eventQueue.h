@@ -5,21 +5,21 @@
 
 typedef struct
 {
-    EventDesc event;
-    QueueItem *next;
-} QueueItem;
+	EventDesc event;
+	EventQueueItem *next;
+} EventQueueItem;
 
 typedef struct
 {
-    QueueItem *front;
-    QueueItem *last;
-    unsigned int size;
-    pthread_mutex_t *mutex;
+	EventQueueItem *front;
+	EventQueueItem *last;
+	unsigned int size;
+	pthread_mutex_t *mutex;
 } EventQueue;
 
-void init(EventQueue *q);
-EventDesc front(Queue *q);
-void pop(Queue *q);
-void push(Queue *q, EventDesc event);
+void event_queue_init(EventQueue *q);
+EventDesc event_queue_front(EventQueue *q);
+void event_queue_pop(EventQueue *q);
+void event_queue_push(EventQueue *q, EventDesc event);
 
 #endif

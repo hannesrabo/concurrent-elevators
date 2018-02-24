@@ -9,11 +9,13 @@
 
 #include <stdio.h>
 
+#include "eventQueue.h"
+
 typedef struct
 {
 	int id;
-	// ElevatorEventQueue eventQueue;
-} elevatorInformation;
+	EventQueue events;
+} ElevatorInformation;
 
 int main(int argc, char *argv[])
 {
@@ -34,7 +36,7 @@ int main(int argc, char *argv[])
 	initHW(hostname, port);
 
 	int numberOfElevators = 1;
-	elevatorInformation *elevators = createElevators(1);
+	ElevatorInformation *elevators = createElevators(1);
 
 	free(elevatorList);
 	return 0;
@@ -42,5 +44,13 @@ int main(int argc, char *argv[])
 
 elevatorInformation *createElevators(int numberOfElevators)
 {
-	return malloc(sizeof(elevatorInformation) * numberOfElevators);
+	ElevatorInformation *elevators = malloc(sizeof(elevatorInformation) * numberOfElevators);
+	int i;
+	for (i = 0; i < numberOfElevators; i++)
+	{
+		elevators[i]->id = i;
+		event_queue_init(elecators[i]->events);
+	}
+
+	return elevators;
 }

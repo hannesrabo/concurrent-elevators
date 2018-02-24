@@ -8,7 +8,7 @@
 
 #include "eventQueue.h"
 
-void init(EventQueue *q)
+void event_queue_init(EventQueue *q)
 {
 	q->front = NULL;
 	q->last = NULL;
@@ -16,38 +16,38 @@ void init(EventQueue *q)
 	pthread_mutex_init(q->mutex);
 }
 
-EventDesc front(Queue *q)
+EventDesc event_queue_front(EventQueue *q)
 {
 	/* Do we need mutex here? */
 	return q->front->event;
 }
 
-void pop(Queue *q)
+void event_queue_pop(EventQueue *q)
 {
 	pthread_mutex_lock(q->mutex);
 	q->size--;
 
-	QueueItem *temp = q->front;
+	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 	free(temp);
 	pthread_mutex_unlock(q->mutex);
 }
 
-void push(Queue *q, EventDesc event)
+void event_queue_push(EventQueue *q, EventDesc event)
 {
 	pthread_mutex_lock(q->mutex);
 	q->size++;
 
 	if (q->front == NULL)
 	{
-		q->front = (QueueItem *)malloc(sizeof(QueueItem));
+		q->front = (EventQueueItem *)malloc(sizeof(EventQueueItem));
 		q->front->data = data;
 		q->front->next = NULL;
 		q->last = q->front;
 	}
 	else
 	{
-		q->last->next = (QueueItem *)malloc(sizeof(QueueItem));
+		q->last->next = (EventQueueItem *)malloc(sizeof(EventQueueItem));
 		q->last->next->data = data;
 		q->last->next->next = NULL;
 		q->last = q->last->next;
