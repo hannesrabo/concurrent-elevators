@@ -1,20 +1,12 @@
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
 
-typedef struct
-{
-	EventDesc event;
-	QueueItem *next;
-} QueueItem;
-
-typedef struct
-{
-	QueueItem *front;
-	QueueItem *last;
-	unsigned int size;
-	pthread_mutex_t *mutex;
-} EventQueue;
+#include "eventQueue.h"
 
 void init(EventQueue *q)
 {
