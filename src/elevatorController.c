@@ -12,14 +12,4 @@
 
 static void *elevatorController(void *argument)
 {
-	int id = 0;
-	float position;
-	float velocity;
-
-	while (1)
-	{
-		/* Get cabin instruction */
-
-		/* Do things depending on it */
-	}
 }
