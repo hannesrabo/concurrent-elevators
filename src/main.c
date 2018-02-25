@@ -53,7 +53,7 @@ ElevatorInformation *createElevators(int numberOfElevators)
 	for (i = 0; i < numberOfElevators; i++)
 	{
 		elevators[i].id = i;
-		event_queue_init(&(elevators[i].events));
+		event_queue_init(&(elevators[i].events), i);
 	}
 
 	return elevators;

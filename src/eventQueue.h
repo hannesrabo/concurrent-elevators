@@ -2,6 +2,7 @@
 #define __EVENT_QUEUE_H
 
 #include <pthread.h>
+#include <semaphore.h>
 
 #include "../hwAPI/hardwareAPI.h"
 
@@ -17,11 +18,11 @@ typedef struct
 {
 	EventQueueItem *front;
 	EventQueueItem *last;
-	unsigned int size;
+	sem_t *size;
 	pthread_mutex_t mutex;
 } EventQueue;
 
-void event_queue_init(EventQueue *q);
+void event_queue_init(EventQueue *q, int unique_id);
 EventDesc event_queue_front(EventQueue *q);
 void event_queue_pop(EventQueue *q);
 void event_queue_push(EventQueue *q, EventDesc event);
