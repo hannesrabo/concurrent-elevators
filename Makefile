@@ -18,6 +18,9 @@ elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eve
 start-elevator: elevator/lib/elevator.jar
 	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 5 -tcp 4711
 
+start-elevator-1: elevator/lib/elevator.jar
+	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 1 -tcp 4711
+
 start-elevator-test: elevator/lib/elevator.jar
 	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 5
 
