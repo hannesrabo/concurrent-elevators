@@ -15,5 +15,8 @@ void *ElevatorController(void *argument)
 {
 	ElevatorInformation *information = (ElevatorInformation*) argument;
 	printf("I am elevator nr: %d\n", information->id);
+
+	handleDoor(information->id, DoorOpen);
+
 	return 0;
 }
