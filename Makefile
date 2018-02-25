@@ -11,7 +11,7 @@ TARGET 	  := bin
 
 all: elevator-controler $(TARGET)/hardwareAPI.o
 
-elevator-controler: $(SRC_FILES)/main.c
+elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eventQueue.c
 	@mkdir -p bin
 	$(COMPILER) $(DEFINES) -o $(TARGET)/$@ $^ $(FLAGS)
 

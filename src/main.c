@@ -8,24 +8,28 @@
 #endif
 
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
 #include "eventQueue.h"
+#include "elevators.h"
+#include "../hwAPI/hardwareAPI.h"
 
-typedef struct
-{
-	int id;
-	EventQueue events;
-} ElevatorInformation;
+ElevatorInformation *createElevators(int numberOfElevators);
 
 int main(int argc, char *argv[])
 {
+	char hostname[30];
+	int port = 4711;
+
 	if (argc != 3)
 	{
 		fprintf(stderr, "Usage: %s host-name port\n", argv[0]);
 		fflush(stderr);
 		exit(-1);
 	}
-	hostname = argv[1];
+	strcpy(hostname, argv[1]);
+
 	if ((port = atoi(argv[2])) <= 0)
 	{
 		fprintf(stderr, "Bad port number: %s\n", argv[2]);
@@ -36,20 +40,20 @@ int main(int argc, char *argv[])
 	initHW(hostname, port);
 
 	int numberOfElevators = 1;
-	ElevatorInformation *elevators = createElevators(1);
+	ElevatorInformation *elevators = createElevators(numberOfElevators);
 
-	free(elevatorList);
+	free(elevators);
 	return 0;
 }
 
-elevatorInformation *createElevators(int numberOfElevators)
+ElevatorInformation *createElevators(int numberOfElevators)
 {
-	ElevatorInformation *elevators = malloc(sizeof(elevatorInformation) * numberOfElevators);
+	ElevatorInformation *elevators = malloc(sizeof(ElevatorInformation) * numberOfElevators);
 	int i;
 	for (i = 0; i < numberOfElevators; i++)
 	{
-		elevators[i]->id = i;
-		event_queue_init(elecators[i]->events);
+		elevators[i].id = i;
+		event_queue_init(&(elevators[i].events));
 	}
 
 	return elevators;

@@ -1,13 +1,17 @@
 #ifndef __EVENT_QUEUE_H
 #define __EVENT_QUEUE_H
 
+#include <pthread.h>
+
 #include "../hwAPI/hardwareAPI.h"
 
-typedef struct
+typedef struct EventQueueItem EventQueueItem;
+
+struct EventQueueItem
 {
 	EventDesc event;
 	EventQueueItem *next;
-} EventQueueItem;
+};
 
 typedef struct
 {
