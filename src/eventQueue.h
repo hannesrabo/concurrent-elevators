@@ -18,7 +18,7 @@ typedef struct
 	EventQueueItem *front;
 	EventQueueItem *last;
 	unsigned int size;
-	pthread_mutex_t *mutex;
+	pthread_mutex_t mutex;
 } EventQueue;
 
 void event_queue_init(EventQueue *q);

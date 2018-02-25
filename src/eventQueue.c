@@ -15,7 +15,7 @@ void event_queue_init(EventQueue *q)
 	q->front = NULL;
 	q->last = NULL;
 	q->size = 0;
-	pthread_mutex_init(q->mutex, NULL);
+	pthread_mutex_init(&q->mutex, NULL);
 }
 
 EventDesc event_queue_front(EventQueue *q)
@@ -26,18 +26,18 @@ EventDesc event_queue_front(EventQueue *q)
 
 void event_queue_pop(EventQueue *q)
 {
-	pthread_mutex_lock(q->mutex);
+	pthread_mutex_lock(&q->mutex);
 	q->size--;
 
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 	free(temp);
-	pthread_mutex_unlock(q->mutex);
+	pthread_mutex_unlock(&q->mutex);
 }
 
 void event_queue_push(EventQueue *q, EventDesc event)
 {
-	pthread_mutex_lock(q->mutex);
+	pthread_mutex_lock(&q->mutex);
 	q->size++;
 
 	if (q->front == NULL)
@@ -54,5 +54,5 @@ void event_queue_push(EventQueue *q, EventDesc event)
 		q->last->next->next = NULL;
 		q->last = q->last->next;
 	}
-	pthread_mutex_unlock(q->mutex);
+	pthread_mutex_unlock(&q->mutex);
 }

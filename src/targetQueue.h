@@ -1,6 +1,8 @@
 #ifndef __TARGET_QUEUE_H
 #define __TARGET_QUEUE_H
 
+#include <pthread.h>
+
 #include "../hwAPI/hardwareAPI.h"
 
 typedef struct
@@ -14,7 +16,7 @@ typedef struct
 	TargetQueueItem *front;
 	TargetQueueItem *last;
 	unsigned int size;
-	pthread_mutex_t *mutex;
+	pthread_mutex_t mutex;
 } TargetQueue;
 
 void target_queue_init(TargetQueue *q);
