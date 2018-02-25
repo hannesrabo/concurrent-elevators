@@ -52,7 +52,13 @@ int main(int argc, char *argv[])
 	}
 
 	pthread_t *elevatorWorkDistributor;
-	pthread_create(elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)elevators);
+	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)elevators);
+
+	pthread_join(elevatorWorkDistributor);
+	for (i = 0; i < numberOfElevators; i++)
+	{
+		pthread_join(elevatorControllers[i], NULL);
+	}
 
 	free(elevators);
 	return 0;
