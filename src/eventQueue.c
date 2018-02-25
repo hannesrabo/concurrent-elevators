@@ -22,10 +22,10 @@ void event_queue_init(EventQueue *q, int unique_id)
 	pthread_mutex_init(&q->mutex, NULL);
 }
 
-EventDesc event_queue_front(EventQueue *q)
+EventQueueItem *event_queue_front(EventQueue *q)
 {
 	sem_wait(q->size);
-	return q->front->event;
+	return q->front;
 }
 
 void event_queue_pop(EventQueue *q)
@@ -38,7 +38,7 @@ void event_queue_pop(EventQueue *q)
 	pthread_mutex_unlock(&q->mutex);
 }
 
-void event_queue_push(EventQueue *q, EventDesc event)
+void event_queue_push(EventQueue *q, EventType type, EventDesc event)
 {
 	pthread_mutex_lock(&q->mutex);
 
@@ -46,6 +46,7 @@ void event_queue_push(EventQueue *q, EventDesc event)
 	{
 		q->front = (EventQueueItem *)malloc(sizeof(EventQueueItem));
 		q->front->event = event;
+		q->front->type = type;
 		q->front->next = NULL;
 		q->last = q->front;
 	}
@@ -53,6 +54,7 @@ void event_queue_push(EventQueue *q, EventDesc event)
 	{
 		q->last->next = (EventQueueItem *)malloc(sizeof(EventQueueItem));
 		q->last->next->event = event;
+		q->last->next->type = type;
 		q->last->next->next = NULL;
 		q->last = q->last->next;
 	}

@@ -11,6 +11,7 @@ typedef struct EventQueueItem EventQueueItem;
 struct EventQueueItem
 {
 	EventDesc event;
+	EventType type;
 	EventQueueItem *next;
 };
 
@@ -23,8 +24,8 @@ typedef struct
 } EventQueue;
 
 void event_queue_init(EventQueue *q, int unique_id);
-EventDesc event_queue_front(EventQueue *q);
+EventQueueItem *event_queue_front(EventQueue *q);
 void event_queue_pop(EventQueue *q);
-void event_queue_push(EventQueue *q, EventDesc event);
+void event_queue_push(EventQueue *q, EventType type, EventDesc event);
 
 #endif
