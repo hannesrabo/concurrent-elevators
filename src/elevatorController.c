@@ -10,6 +10,7 @@
 #include "../hwAPI/hardwareAPI.h"
 #include "elevatorController.h"
 
-static void *elevatorController(void *argument)
+void *ElevatorController(void *argument)
 {
+	return 0;
 }

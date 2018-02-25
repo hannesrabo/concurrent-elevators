@@ -16,24 +16,21 @@ void *inputHandler(void *argument)
 		{
 		case FloorButton:
 			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "floor button: floor %d, type %d\n",
-					ed.fbp.floor, (int)ed.fbp.type);
+			fprintf(stdout, "floor button: floor %d, type %d\n", ed.fbp.floor, (int)ed.fbp.type);
 			fflush(stdout);
 			// pthread_mutex_unlock(&mutex);
 			break;
 
 		case CabinButton:
 			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "cabin button: cabin %d, floor %d\n",
-					ed.cbp.cabin, ed.cbp.floor);
+			fprintf(stdout, "cabin button: cabin %d, floor %d\n", ed.cbp.cabin, ed.cbp.floor);
 			fflush(stdout);
 			// pthread_mutex_unlock(&mutex);
 			break;
 
 		case Position:
 			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "cabin position: cabin %d, position %f\n",
-					ed.cp.cabin, ed.cp.position);
+			fprintf(stdout, "cabin position: cabin %d, position %f\n", ed.cp.cabin, ed.cp.position);
 			fflush(stdout);
 			// pthread_mutex_unlock(&mutex);
 			break;

@@ -13,7 +13,7 @@
 // It is sufficient to lock front or back
 void event_queue_init(EventQueue *q, int unique_id)
 {
-	char *name[50];
+	char name[50];
 	sprintf(name, "/elevator_queue%d", unique_id);
 
 	q->front = NULL;

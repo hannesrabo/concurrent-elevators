@@ -13,6 +13,8 @@
 
 #include "eventQueue.h"
 #include "elevators.h"
+#include "elevatorController.h"
+#include "elevatorWorkDistributor.h"
 #include "../hwAPI/hardwareAPI.h"
 
 ElevatorInformation *createElevators(int numberOfElevators);
@@ -40,7 +42,17 @@ int main(int argc, char *argv[])
 	initHW(hostname, port);
 
 	int numberOfElevators = 1;
+
 	ElevatorInformation *elevators = createElevators(numberOfElevators);
+	pthread_t elevatorControllers[numberOfElevators];
+	int i;
+	for (i = 0; i < numberOfElevators; i++)
+	{
+		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)&elevators[i]);
+	}
+
+	pthread_t *elevatorWorkDistributor;
+	pthread_create(elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)elevators);
 
 	free(elevators);
 	return 0;
