@@ -18,7 +18,7 @@ void event_queue_init(EventQueue *q, int unique_id)
 
 	q->front = NULL;
 	q->last = NULL;
-	q->size = sem_open(name, O_CREAT);
+	q->size = sem_open(name, O_CREAT | O_EXCL, S_IWUSR, 0);
 	pthread_mutex_init(&q->mutex, NULL);
 }
 
