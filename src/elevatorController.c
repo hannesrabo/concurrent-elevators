@@ -13,10 +13,27 @@
 
 void *ElevatorController(void *argument)
 {
-	ElevatorInformation *information = (ElevatorInformation*) argument;
-	printf("I am elevator nr: %d\n", information->id);
+	ElevatorInformation *information = (ElevatorInformation *)argument;
+	EventQueueItem *nextEvent;
 
-	handleDoor(information->id, DoorOpen);
+	while (1)
+	{
+		nextEvent = event_queue_front(&information->events);
+		event_queue_pop(&information->events);
+
+		if (nextEvent->type == Position)
+		{
+			// printf("Error!\n");
+			// printf("Error! %s\n", nextEvent->event->e.str);
+			printf("Position %f received\n", nextEvent->event->cp.position);
+		}
+		else
+		{
+			printf("Next event received!\n");
+		}
+
+		sleep(3);
+	}
 
 	return 0;
 }
