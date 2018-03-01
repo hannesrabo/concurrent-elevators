@@ -15,6 +15,7 @@
 #include "elevators.h"
 #include "elevatorController.h"
 #include "elevatorWorkDistributor.h"
+#include "masterEventHandler.h"
 #include "../hwAPI/hardwareAPI.h"
 
 ElevatorInformation *createElevators(int numberOfElevators);
@@ -53,6 +54,8 @@ int main(int argc, char *argv[])
 
 	pthread_t elevatorWorkDistributor;
 	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)elevators);
+
+	masterEventHandler(elevators, elevatorWorkDistributor);
 
 	pthread_join(elevatorWorkDistributor, NULL);
 	for (i = 0; i < numberOfElevators; i++)

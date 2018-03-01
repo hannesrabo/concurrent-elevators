@@ -1,9 +1,14 @@
-#include <stdio.h>
+#ifndef _REENTRANT
+#define _REENTRANT
+#endif
 
+#include <stdio.h>
+#include <pthread.h>
+
+#include "elevators.h"
 #include "../hwAPI/hardwareAPI.h"
 
-/* TODO: replace all fprint with real code */
-void *inputHandler(void *argument)
+void masterEventHandler(ElevatorInformation *elevators, pthread_t elevatorWorkDistributor)
 {
 	EventType e;
 	EventDesc ed;
@@ -15,39 +20,27 @@ void *inputHandler(void *argument)
 		switch (e)
 		{
 		case FloorButton:
-			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "floor button: floor %d, type %d\n", ed.fbp.floor, (int)ed.fbp.type);
-			fflush(stdout);
-			// pthread_mutex_unlock(&mutex);
+			printf("Floor button pressed on floor %d.\n", ed.fbp.floor);
 			break;
 
 		case CabinButton:
-			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "cabin button: cabin %d, floor %d\n", ed.cbp.cabin, ed.cbp.floor);
-			fflush(stdout);
-			// pthread_mutex_unlock(&mutex);
+			printf("Cabin button pressed in cabin %d.\n", ed.cbp.cabin);
 			break;
 
 		case Position:
-			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "cabin position: cabin %d, position %f\n", ed.cp.cabin, ed.cp.position);
-			fflush(stdout);
-			// pthread_mutex_unlock(&mutex);
 			break;
 
 		case Speed:
-			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "speed: %f\n", ed.s.speed);
-			fflush(stdout);
-			// pthread_mutex_unlock(&mutex);
+			printf("Speed received %f\n", ed.s.speed);
 			break;
 
 		case Error:
-			// pthread_mutex_lock(&mutex);
-			fprintf(stdout, "error: \"%s\"\n", ed.e.str);
-			fflush(stdout);
-			// pthread_mutex_unlock(&mutex);
+			printf("Error in master event handler!\n");
 			break;
 		}
 	}
+}
+
+void floorButtonPress(int floor, FloorButtonType direction, pthread_t elevatorWorkDistributor)
+{
 }

@@ -11,6 +11,8 @@
 #include "elevatorController.h"
 #include "elevators.h"
 
+void updatePosition(double *currentPosition, double newPosition);
+
 void *ElevatorController(void *argument)
 {
 	ElevatorInformation *information = (ElevatorInformation *)argument;
