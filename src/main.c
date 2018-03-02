@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
 	ElevatorInformation *elevators = createElevators(numberOfElevators, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
-	for (i = 0; i < numberOfElevators; i++)
+	for (i = 1; i <= numberOfElevators; i++)
 	{
 		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)&elevators[i]);
 	}
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 	masterEventHandler(&ewdarg);
 
 	pthread_join(elevatorWorkDistributor, NULL);
-	for (i = 0; i < numberOfElevators; i++)
+	for (i = 1; i <= numberOfElevators; i++)
 	{
 		pthread_join(elevatorControllers[i], NULL);
 	}
@@ -79,7 +79,7 @@ ElevatorInformation *createElevators(int numberOfElevators, pthread_mutex_t send
 {
 	ElevatorInformation *elevators = malloc(sizeof(ElevatorInformation) * numberOfElevators);
 	int i;
-	for (i = 0; i < numberOfElevators; i++)
+	for (i = 1; i <= numberOfElevators; i++)
 	{
 		elevators[i].id = i;
 		elevators[i].sendMutex = sendMutex;

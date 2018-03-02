@@ -29,6 +29,7 @@ void masterEventHandler(elevatorWorkDistributorArgument *ewdarg)
 			break;
 
 		case CabinButton:
+			// printf("Master event handler: Cabin button pressed in cabin %d to floor %d!\n", ed.cbp.cabin, ed.cbp.floor);
 			event_queue_push(&elevators[ed.cbp.cabin].events, CabinButton, &ed);
 			break;
 
@@ -37,7 +38,7 @@ void masterEventHandler(elevatorWorkDistributorArgument *ewdarg)
 			break;
 
 		case Speed:
-			for (i = 0; i < numberOfElevators; i++)
+			for (i = 1; i <= numberOfElevators; i++)
 				event_queue_push(&elevators[i].events, Speed, &ed);
 			break;
 

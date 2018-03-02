@@ -26,6 +26,7 @@ void *ElevatorWorkDistributor(void *argument)
 			printf("Floor button pressed on floor %d!\n", nextEvent->event->fbp.floor);
 			break;
 		case CabinButton:
+			// printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, nextEvent->event->cbp.floor);
 			event_queue_push(&elevators[nextEvent->event->cbp.cabin].events, CabinButton, nextEvent->event);
 			break;
 		case Position:
@@ -35,6 +36,8 @@ void *ElevatorWorkDistributor(void *argument)
 			printf("Error in Elevator Work Distributor!\n");
 			break;
 		}
+
+		event_queue_pop(events);
 	}
 
 	return 0;

@@ -43,7 +43,15 @@ void *ElevatorController(void *argument)
 		case CabinButton:
 			if (nextEvent->event->cbp.cabin == information->id)
 			{
-				printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, nextEvent->event->cbp.floor);
+				int floor = nextEvent->event->cbp.floor;
+				if (floor == 32000)
+				{
+					printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
+				}
+				else
+				{
+					printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
+				}
 			}
 			break;
 		case FloorButton:
