@@ -6,32 +6,39 @@
 #include <pthread.h>
 
 #include "elevators.h"
+#include "elevatorWorkDistributor.h"
 #include "../hwAPI/hardwareAPI.h"
 
-void masterEventHandler(ElevatorInformation *elevators, pthread_t elevatorWorkDistributor)
+void masterEventHandler(elevatorWorkDistributorArgument *ewdarg)
 {
+	int numberOfElevators = ewdarg->numberOfElevators;
+	ElevatorInformation *elevators = ewdarg->elevators;
+	EventQueue *workDistributorEvents = &ewdarg->events;
+
 	EventType e;
 	EventDesc ed;
 
+	int i;
 	while (1)
 	{
 		e = waitForEvent(&ed);
-
 		switch (e)
 		{
 		case FloorButton:
-			printf("Floor button pressed on floor %d.\n", ed.fbp.floor);
+			event_queue_push(workDistributorEvents, FloorButton, &ed);
 			break;
 
 		case CabinButton:
-			printf("Cabin button pressed in cabin %d.\n", ed.cbp.cabin);
+			event_queue_push(&elevators[ed.cbp.cabin].events, CabinButton, &ed);
 			break;
 
 		case Position:
+			event_queue_push(&elevators[ed.cp.cabin].events, Position, &ed);
 			break;
 
 		case Speed:
-			printf("Speed received %f\n", ed.s.speed);
+			for (i = 0; i < numberOfElevators; i++)
+				event_queue_push(&elevators[i].events, Speed, &ed);
 			break;
 
 		case Error:
@@ -39,8 +46,4 @@ void masterEventHandler(ElevatorInformation *elevators, pthread_t elevatorWorkDi
 			break;
 		}
 	}
-}
-
-void floorButtonPress(int floor, FloorButtonType direction, pthread_t elevatorWorkDistributor)
-{
 }

@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 #include "eventQueue.h"
 #include "elevators.h"
@@ -18,7 +19,7 @@
 #include "masterEventHandler.h"
 #include "../hwAPI/hardwareAPI.h"
 
-ElevatorInformation *createElevators(int numberOfElevators);
+ElevatorInformation *createElevators(int numberOfElevators, pthread_mutex_t sendMutex);
 
 int main(int argc, char *argv[])
 {
@@ -43,8 +44,10 @@ int main(int argc, char *argv[])
 	initHW(hostname, port);
 
 	int numberOfElevators = 1;
+	pthread_mutex_t sendMutex;
+	pthread_mutex_init(&sendMutex, NULL);
 
-	ElevatorInformation *elevators = createElevators(numberOfElevators);
+	ElevatorInformation *elevators = createElevators(numberOfElevators, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
 	for (i = 0; i < numberOfElevators; i++)
@@ -53,9 +56,14 @@ int main(int argc, char *argv[])
 	}
 
 	pthread_t elevatorWorkDistributor;
-	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)elevators);
+	elevatorWorkDistributorArgument ewdarg;
+	ewdarg.numberOfElevators = numberOfElevators;
+	ewdarg.elevators = elevators;
+	ewdarg.sendMutex = sendMutex;
+	event_queue_init(&ewdarg.events, numberOfElevators + 1);
+	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)&ewdarg);
 
-	masterEventHandler(elevators, elevatorWorkDistributor);
+	masterEventHandler(&ewdarg);
 
 	pthread_join(elevatorWorkDistributor, NULL);
 	for (i = 0; i < numberOfElevators; i++)
@@ -67,13 +75,14 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-ElevatorInformation *createElevators(int numberOfElevators)
+ElevatorInformation *createElevators(int numberOfElevators, pthread_mutex_t sendMutex)
 {
 	ElevatorInformation *elevators = malloc(sizeof(ElevatorInformation) * numberOfElevators);
 	int i;
 	for (i = 0; i < numberOfElevators; i++)
 	{
 		elevators[i].id = i;
+		elevators[i].sendMutex = sendMutex;
 		event_queue_init(&(elevators[i].events), i);
 	}
 

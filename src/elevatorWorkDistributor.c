@@ -3,21 +3,39 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
+#include "elevatorWorkDistributor.h"
 #include "elevators.h"
 
 void *ElevatorWorkDistributor(void *argument)
 {
-	ElevatorInformation *elevators = (ElevatorInformation *)argument;
+	elevatorWorkDistributorArgument *ewdarg = (elevatorWorkDistributorArgument *)argument;
+	// int numberOfElevators = ewdarg->numberOfElevators;
+	ElevatorInformation *elevators = ewdarg->elevators;
+	EventQueue *events = &ewdarg->events;
+	EventQueueItem *nextEvent;
 
-	EventType type = Position;
-	EventDesc *desc = malloc(sizeof(EventDesc));
-	desc->cp.cabin = 0;
-	desc->cp.position = 1.5;
+	while (1)
+	{
+		nextEvent = event_queue_front(events);
 
-	event_queue_push(&elevators[0].events, type, desc);
-
-	free(desc);
+		switch (nextEvent->type)
+		{
+		case FloorButton:
+			printf("Floor button pressed on floor %d!\n", nextEvent->event->fbp.floor);
+			break;
+		case CabinButton:
+			event_queue_push(&elevators[nextEvent->event->cbp.cabin].events, CabinButton, nextEvent->event);
+			break;
+		case Position:
+		case Speed:
+		case Error:
+		default:
+			printf("Error in Elevator Work Distributor!\n");
+			break;
+		}
+	}
 
 	return 0;
 }
