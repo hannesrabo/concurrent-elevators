@@ -1,9 +1,8 @@
 #ifndef __EVENT_QUEUE_H
 #define __EVENT_QUEUE_H
 
-#include <pthread.h>
 #include <semaphore.h>
-
+#include <pthread.h>
 #include "../hwAPI/hardwareAPI.h"
 
 typedef struct EventQueueItem EventQueueItem;
