@@ -10,41 +10,35 @@
 #include "../hwAPI/hardwareAPI.h"
 #include "elevatorController.h"
 #include "elevators.h"
+#include "targetQueue.h"
 
-void updatePosition(double *currentPosition, double newPosition);
+void updatePosition(ElevatorStatus* status, double newPosition);
 
-void *ElevatorController(void *argument)
+void *ElevatorController(void *elevator_status_arg)
 {
-	ElevatorInformation *information = (ElevatorInformation *)argument;
+	ElevatorStatus *status = (ElevatorStatus *) elevator_status_arg;
 	EventQueueItem *nextEvent;
 
-	double speed = 1;
-	double position = 0;
-
-	pthread_mutex_lock(&information->sendMutex);
-	getSpeed();
-	whereIs(information->id);
-	pthread_mutex_unlock(&information->sendMutex);
-
+	// Handle events
 	while (1)
 	{
-		nextEvent = event_queue_pop(information->events);
+		nextEvent = event_queue_pop(status->events);
 
 		switch (nextEvent->type)
 		{
 		case Position:
-			if (nextEvent->event->cp.cabin == information->id)
-				updatePosition(&position, nextEvent->event->cp.position);
-			printf("Position received: %f\n", position);
+			if (nextEvent->event->cp.cabin == status->id)
+				updatePosition(status, nextEvent->event->cp.position);
+			printf("Position received: %f\n", status->position);
 			break;
 
 		case Speed:
-			speed = nextEvent->event->s.speed;
-			printf("Speed received: %f\n", speed);
+			status->speed = nextEvent->event->s.speed;
+			printf("Speed received: %f\n", status->speed);
 			break;
 
 		case CabinButton:
-			if (nextEvent->event->cbp.cabin == information->id)
+			if (nextEvent->event->cbp.cabin == status->id)
 			{
 				int floor = nextEvent->event->cbp.floor;
 				if (floor == 32000)
@@ -59,11 +53,11 @@ void *ElevatorController(void *argument)
 			break;
 
 		case FloorButton:
-			printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, information->id);
+			printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, status->id);
 			break;
 
 		default:
-			printf("[ERROR] Elevator controler %d got invalid event code (%d)!", information->id, nextEvent->type);
+			printf("[ERROR] Elevator controler %d got invalid event code (%d)!", status->id, nextEvent->type);
 			exit(1);
 			break;
 
@@ -76,10 +70,9 @@ void *ElevatorController(void *argument)
 	return 0;
 }
 
-void updatePosition(double *currentPosition, double newPosition)
+void updatePosition(ElevatorStatus* status, double newPosition)
 {
-	*currentPosition = newPosition;
-
+	status->position = newPosition;
 	// This is where we need to handle when to stop the elevators.
-	printf("Position received: %f\n", *currentPosition);
+	printf("Position received: %f\n", status->position);
 }

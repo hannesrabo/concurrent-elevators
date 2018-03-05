@@ -8,7 +8,7 @@
 
 typedef struct
 {
-	ElevatorInformation **elevators;
+	ElevatorStatus **elevators;
 	EventQueue *events;
 	int numberOfElevators;
 	pthread_mutex_t sendMutex;

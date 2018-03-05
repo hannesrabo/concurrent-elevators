@@ -13,13 +13,14 @@
 #include <pthread.h>
 
 #include "eventQueue.h"
+#include "targetQueue.h"
 #include "elevators.h"
 #include "elevatorController.h"
 #include "elevatorWorkDistributor.h"
 #include "masterEventHandler.h"
 #include "../hwAPI/hardwareAPI.h"
 
-ElevatorInformation **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex);
+ElevatorStatus **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex);
 
 int main(int argc, char *argv[])
 {
@@ -47,24 +48,34 @@ int main(int argc, char *argv[])
 	pthread_mutex_t sendMutex;
 	pthread_mutex_init(&sendMutex, NULL);
 
-	ElevatorInformation **elevators = allocate_elevator_information(numberOfElevators, sendMutex);
+	ElevatorStatus **elevators = allocate_elevator_information(numberOfElevators, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
+
+	// Create the threads and request initial values.
+	pthread_mutex_lock(&sendMutex);
 	for (i = 1; i <= numberOfElevators; i++)
 	{
 		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)elevators[i]);
-	}
 
+		// Initial position.
+		whereIs(elevators[i]->id);
+	}
+	
+	// Request an update of the speed of carts
+	getSpeed();
+	pthread_mutex_unlock(&sendMutex);
+
+	// Create the work distributor and calculation thread
 	pthread_t elevatorWorkDistributor;
 	ElevatorWorkDistributorArgument ewdarg;
 	ewdarg.numberOfElevators = numberOfElevators;
 	ewdarg.elevators = elevators;
 	ewdarg.sendMutex = sendMutex;
-	ewdarg.events = (EventQueue *) malloc(sizeof(EventQueue));
-	event_queue_init(ewdarg.events, numberOfElevators + 1);
+	ewdarg.events = event_queue_create(numberOfElevators + 1);
 	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)&ewdarg);
 
-	// The main tread will wait here 
+	// Run master event handler.
 	masterEventHandler(&ewdarg);
 
 	pthread_join(elevatorWorkDistributor, NULL);
@@ -73,22 +84,25 @@ int main(int argc, char *argv[])
 		pthread_join(elevatorControllers[i], NULL);
 	}
 
-	// This is wrong now...
+	// This is wrong now...  we need to free them individually.
 	free(elevators);
 	return 0;
 }
 
-ElevatorInformation **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex)
+ElevatorStatus **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex)
 {
-	ElevatorInformation **elevators = (ElevatorInformation **) malloc(sizeof(ElevatorInformation *) * numberOfElevators);
+	ElevatorStatus **elevators = (ElevatorStatus **) malloc(sizeof(ElevatorStatus *) * numberOfElevators);
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
-		elevators[i] = (ElevatorInformation *) malloc(sizeof(ElevatorInformation));
-		elevators[i]->id = i;
-		elevators[i]->sendMutex = sendMutex;
-		elevators[i]->events = (EventQueue *) malloc(sizeof(EventQueue));
-		event_queue_init(elevators[i]->events, i);
+		elevators[i] = (ElevatorStatus *) malloc(sizeof(ElevatorStatus));
+		elevators[i]->id 		= i;
+		elevators[i]->sendMutex = sendMutex; // shared
+		elevators[i]->events 	= event_queue_create(i);
+		elevators[i]->q_up 		= target_queue_create();
+		elevators[i]->q_down 	= target_queue_create();
+		elevators[i]->position  = 0;
+		elevators[i]->speed		= 0;
 	}
 
 	return elevators;

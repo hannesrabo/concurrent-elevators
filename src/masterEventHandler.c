@@ -20,7 +20,7 @@
 void masterEventHandler(ElevatorWorkDistributorArgument *ewdarg)
 {
 	int numberOfElevators = ewdarg->numberOfElevators;
-	ElevatorInformation **elevators = ewdarg->elevators;
+	ElevatorStatus **elevators = ewdarg->elevators;
 	EventQueue *workDistributorEvents = ewdarg->events;
 
 	int i;

@@ -14,7 +14,7 @@ all: elevator-controler $(TARGET)/hardwareAPI.o
 start-elevator-controller: elevator-controler
 	./$(TARGET)/elevator-controler 127.0.0.1 4711
 
-elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eventQueue.c $(SRC_FILES)/elevatorController.c $(SRC_FILES)/elevatorWorkDistributor.c $(SRC_FILES)/masterEventHandler.c
+elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eventQueue.c $(SRC_FILES)/targetQueue.c $(SRC_FILES)/elevatorController.c $(SRC_FILES)/elevatorWorkDistributor.c $(SRC_FILES)/masterEventHandler.c
 	@mkdir -p $(TARGET)
 	$(COMPILER) $(DEFINES) -o $(TARGET)/$@ $^ $(FLAGS)
 

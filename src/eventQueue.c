@@ -9,8 +9,10 @@
 
 #include "eventQueue.h"
 
-void event_queue_init(EventQueue *q, int unique_id)
+EventQueue* event_queue_create(int unique_id) 
 {
+	EventQueue* q = (EventQueue *) malloc(sizeof(EventQueue));
+
 	char name[50];
 	sprintf(name, "/elevator_queue%d", unique_id);
 
@@ -22,6 +24,8 @@ void event_queue_init(EventQueue *q, int unique_id)
 
 	pthread_mutex_init(&q->read_mutex, NULL);
 	pthread_mutex_init(&q->write_mutex, NULL);
+
+	return q;
 }
 
 /**

@@ -1,13 +1,17 @@
 #include "targetQueue.h"
 #include <stdlib.h>
 
-void target_queue_init(TargetQueue *q)
+TargetQueue* target_queue_create()
 {
+    TargetQueue *q = (TargetQueue *) malloc(sizeof(TargetQueue));
+    
     q->front = NULL;
     q->direction = Up;
 
     pthread_mutex_init(&q->read_mutex, NULL);
 	pthread_mutex_init(&q->write_mutex, NULL);
+
+    return q;
 }
 
 TargetQueueItem* target_queue_peek(TargetQueue *q)

@@ -23,7 +23,8 @@ typedef struct
 	pthread_mutex_t read_mutex;	
 } EventQueue;
 
-void event_queue_init(EventQueue *q, int unique_id);
+EventQueue* event_queue_create(int unique_id);
+// void event_queue_init(EventQueue *q, int unique_id);
 EventQueueItem *event_queue_pop(EventQueue *q);
 void event_queue_push(EventQueue *q, EventQueueItem *item);
 
