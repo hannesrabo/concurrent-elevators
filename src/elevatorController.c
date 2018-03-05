@@ -49,17 +49,17 @@ void *ElevatorController(void *argument)
 				int floor = nextEvent->event->cbp.floor;
 				if (floor == 32000)
 				{
-					// printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
+					printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
 				}
 				else
 				{
-					// printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
+					printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
 				}
 			}
 			break;
 
 		case FloorButton:
-			// printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, information->id);
+			printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, information->id);
 			break;
 
 		default:
@@ -69,6 +69,7 @@ void *ElevatorController(void *argument)
 
 		}
 
+		// This is where all elements are freed
 		event_queue_free_element(nextEvent);
 	}
 
@@ -78,5 +79,7 @@ void *ElevatorController(void *argument)
 void updatePosition(double *currentPosition, double newPosition)
 {
 	*currentPosition = newPosition;
+
+	// This is where we need to handle when to stop the elevators.
 	printf("Position received: %f\n", *currentPosition);
 }
