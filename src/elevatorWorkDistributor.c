@@ -8,37 +8,52 @@
 #include "elevatorWorkDistributor.h"
 #include "elevators.h"
 
+void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorInformation **elevators);
+
+/**
+ * This worker thread is handeling computation of paths and work assignment
+ * for the different carts.
+ */
 void *ElevatorWorkDistributor(void *argument)
 {
-	elevatorWorkDistributorArgument *ewdarg = (elevatorWorkDistributorArgument *)argument;
+	ElevatorWorkDistributorArgument *ewdarg = (ElevatorWorkDistributorArgument *)argument;
 	// int numberOfElevators = ewdarg->numberOfElevators;
-	ElevatorInformation *elevators = ewdarg->elevators;
-	EventQueue *events = &ewdarg->events;
+	ElevatorInformation **elevators = ewdarg->elevators;
+	EventQueue *events = ewdarg->events;
 	EventQueueItem *nextEvent;
 
 	while (1)
 	{
-		nextEvent = event_queue_front(events);
+		nextEvent = event_queue_pop(events);
 
 		switch (nextEvent->type)
 		{
 		case FloorButton:
-			printf("Floor button pressed on floor %d!\n", nextEvent->event->fbp.floor);
+			// We need to push the event on the correct queue.
+			handleFloorButtonPress(nextEvent, elevators);
 			break;
 		case CabinButton:
-			// printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, nextEvent->event->cbp.floor);
-			event_queue_push(&elevators[nextEvent->event->cbp.cabin].events, CabinButton, nextEvent->event);
+			// This is handled by the cabin itself.
+			event_queue_push(elevators[nextEvent->event->cbp.cabin]->events, nextEvent);
 			break;
-		case Position:
-		case Speed:
-		case Error:
 		default:
-			printf("Error in Elevator Work Distributor!\n");
+			printf("[ERROR] Unknown event code in elevator work distributor (%d)!\n", nextEvent->type);
+			exit(1);
 			break;
 		}
-
-		event_queue_pop(events);
 	}
 
+	// We do not free the event here as the ownership is passed on.
+
 	return 0;
+}
+
+/**
+ * Calculates the cost for different carts and then push the event on the 
+ * queue with least cost.
+ */
+void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorInformation **elevators) 
+{
+	// This is just a test. Push it to the first cart
+	event_queue_push(elevators[1]->events, eventItem);
 }

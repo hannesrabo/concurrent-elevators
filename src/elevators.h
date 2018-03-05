@@ -9,7 +9,7 @@ typedef struct
 {
 	int id;
 	pthread_mutex_t sendMutex;
-	EventQueue events;
+	EventQueue *events;
 } ElevatorInformation;
 
 #endif

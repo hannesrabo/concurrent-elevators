@@ -11,9 +11,8 @@ TARGET 	  := bin
 
 all: elevator-controler $(TARGET)/hardwareAPI.o
 
-# Does not work: Hannes please fix
-# start-elevator-controller: elevator-controler
-# 	$(TARGET)/elevator-controler 127.0.0.1 4711
+start-elevator-controller: elevator-controler
+	./$(TARGET)/elevator-controler 127.0.0.1 4711
 
 elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eventQueue.c $(SRC_FILES)/elevatorController.c $(SRC_FILES)/elevatorWorkDistributor.c $(SRC_FILES)/masterEventHandler.c
 	@mkdir -p $(TARGET)

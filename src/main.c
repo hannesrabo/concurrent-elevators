@@ -19,7 +19,7 @@
 #include "masterEventHandler.h"
 #include "../hwAPI/hardwareAPI.h"
 
-ElevatorInformation *createElevators(int numberOfElevators, pthread_mutex_t sendMutex);
+ElevatorInformation **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex);
 
 int main(int argc, char *argv[])
 {
@@ -47,22 +47,24 @@ int main(int argc, char *argv[])
 	pthread_mutex_t sendMutex;
 	pthread_mutex_init(&sendMutex, NULL);
 
-	ElevatorInformation *elevators = createElevators(numberOfElevators, sendMutex);
+	ElevatorInformation **elevators = allocate_elevator_information(numberOfElevators, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
-		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)&elevators[i]);
+		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)elevators[i]);
 	}
 
 	pthread_t elevatorWorkDistributor;
-	elevatorWorkDistributorArgument ewdarg;
+	ElevatorWorkDistributorArgument ewdarg;
 	ewdarg.numberOfElevators = numberOfElevators;
 	ewdarg.elevators = elevators;
 	ewdarg.sendMutex = sendMutex;
-	event_queue_init(&ewdarg.events, numberOfElevators + 1);
+	ewdarg.events = (EventQueue *) malloc(sizeof(EventQueue));
+	event_queue_init(ewdarg.events, numberOfElevators + 1);
 	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)&ewdarg);
 
+	// The main tread will wait here 
 	masterEventHandler(&ewdarg);
 
 	pthread_join(elevatorWorkDistributor, NULL);
@@ -71,19 +73,22 @@ int main(int argc, char *argv[])
 		pthread_join(elevatorControllers[i], NULL);
 	}
 
+	// This is wrong now...
 	free(elevators);
 	return 0;
 }
 
-ElevatorInformation *createElevators(int numberOfElevators, pthread_mutex_t sendMutex)
+ElevatorInformation **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex)
 {
-	ElevatorInformation *elevators = malloc(sizeof(ElevatorInformation) * numberOfElevators);
+	ElevatorInformation **elevators = (ElevatorInformation **) malloc(sizeof(ElevatorInformation *) * numberOfElevators);
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
-		elevators[i].id = i;
-		elevators[i].sendMutex = sendMutex;
-		event_queue_init(&(elevators[i].events), i);
+		elevators[i] = (ElevatorInformation *) malloc(sizeof(ElevatorInformation));
+		elevators[i]->id = i;
+		elevators[i]->sendMutex = sendMutex;
+		elevators[i]->events = (EventQueue *) malloc(sizeof(EventQueue));
+		event_queue_init(elevators[i]->events, i);
 	}
 
 	return elevators;

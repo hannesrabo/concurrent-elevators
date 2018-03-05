@@ -28,40 +28,48 @@ void *ElevatorController(void *argument)
 
 	while (1)
 	{
-		nextEvent = event_queue_front(&information->events);
+		nextEvent = event_queue_pop(information->events);
 
 		switch (nextEvent->type)
 		{
 		case Position:
 			if (nextEvent->event->cp.cabin == information->id)
 				updatePosition(&position, nextEvent->event->cp.position);
+			printf("Position received: %f\n", position);
 			break;
+
 		case Speed:
 			speed = nextEvent->event->s.speed;
 			printf("Speed received: %f\n", speed);
 			break;
+
 		case CabinButton:
 			if (nextEvent->event->cbp.cabin == information->id)
 			{
 				int floor = nextEvent->event->cbp.floor;
 				if (floor == 32000)
 				{
-					printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
+					// printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
 				}
 				else
 				{
-					printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
+					// printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
 				}
 			}
 			break;
+
 		case FloorButton:
-		case Error:
-		default:
-			printf("I %d got error!", information->id);
+			// printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, information->id);
 			break;
+
+		default:
+			printf("[ERROR] Elevator controler %d got invalid event code (%d)!", information->id, nextEvent->type);
+			exit(1);
+			break;
+
 		}
 
-		event_queue_pop(&information->events);
+		event_queue_free_element(nextEvent);
 	}
 
 	return 0;

@@ -3,6 +3,6 @@
 
 #include <pthread.h>
 
-void masterEventHandler(elevatorWorkDistributorArgument *ewdarg);
+void masterEventHandler(ElevatorWorkDistributorArgument *ewdarg);
 
 #endif

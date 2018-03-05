@@ -8,11 +8,11 @@
 
 typedef struct
 {
-	ElevatorInformation *elevators;
-	EventQueue events;
+	ElevatorInformation **elevators;
+	EventQueue *events;
 	int numberOfElevators;
 	pthread_mutex_t sendMutex;
-} elevatorWorkDistributorArgument;
+} ElevatorWorkDistributorArgument;
 
 void *ElevatorWorkDistributor(void *argument);
 

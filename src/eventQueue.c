@@ -9,8 +9,6 @@
 
 #include "eventQueue.h"
 
-// TODO: We do not have to lock the queue completely before altering it.
-// It is sufficient to lock front or back
 void event_queue_init(EventQueue *q, int unique_id)
 {
 	char name[50];
@@ -22,54 +20,65 @@ void event_queue_init(EventQueue *q, int unique_id)
 	q->last = NULL;
 	q->size = sem_open(name, O_CREAT | O_EXCL, S_IWUSR, 0);
 
-	pthread_mutex_init(&q->mutex, NULL);
+	pthread_mutex_init(&q->read_mutex, NULL);
+	pthread_mutex_init(&q->write_mutex, NULL);
 }
 
-EventQueueItem *event_queue_front(EventQueue *q)
+/**
+ * Blocking read/pop of the next element in the queue.
+ */
+EventQueueItem *event_queue_pop(EventQueue *q)
 {
+	// Wait for a item to be available
 	sem_wait(q->size);
-	return q->front;
+	pthread_mutex_lock(&q->read_mutex);
+
+	EventQueueItem *temp = q->front;
+	q->front = q->front->next;
+
+	pthread_mutex_unlock(&q->read_mutex);	
+	return temp;
 }
 
-void event_queue_pop(EventQueue *q)
+/**
+ * Non blocking push of the next element
+ */
+void event_queue_push(EventQueue *q, EventQueueItem *item) 
 {
-	pthread_mutex_lock(&q->mutex);
+	pthread_mutex_lock(&q->write_mutex);
 
-	if (q->front != NULL)
+	item->next = NULL;
+
+	// If we have an empty list
+	if (q->front == NULL) 
 	{
-		EventQueueItem *temp = q->front;
-		q->front = q->front->next;
-		free(temp->event);
-		free(temp);
-	}
-
-	pthread_mutex_unlock(&q->mutex);
-}
-
-void event_queue_push(EventQueue *q, EventType type, EventDesc *event)
-{
-	pthread_mutex_lock(&q->mutex);
-
-	EventDesc *heapEvent = malloc(sizeof(EventDesc));
-	memcpy(heapEvent, event, sizeof(*event));
-
-	if (q->front == NULL)
-	{
-		q->front = (EventQueueItem *)malloc(sizeof(EventQueueItem));
-		q->front->event = heapEvent;
-		q->front->type = type;
-		q->front->next = NULL;
-		q->last = q->front;
+		q->front = item;
+		q->last = q->front; 	// Update end to be first element as well.
 	}
 	else
-	{
-		q->last->next = (EventQueueItem *)malloc(sizeof(EventQueueItem));
-		q->last->next->event = heapEvent;
-		q->last->next->type = type;
-		q->last->next->next = NULL;
-		q->last = q->last->next;
+	{ // We can not have a null list end here. It will be the first element in that edge case
+		q->last->next = item;
+		q->last = q->last->next; // Update the end.
 	}
 
 	sem_post(q->size);
-	pthread_mutex_unlock(&q->mutex);
+	pthread_mutex_unlock(&q->write_mutex);
+}
+
+void event_queue_free_element(EventQueueItem *item)
+{
+	if (item != NULL) 
+	{
+		free(item->event);
+		free(item);
+	}
+}
+
+EventQueueItem *event_queue_create_element(EventType type, EventDesc *event)
+{
+	EventQueueItem *item = (EventQueueItem *) malloc(sizeof(EventQueueItem));
+	item->type = type;
+	item->event = event;
+	item->next = NULL;
+	return item;
 }
