@@ -127,7 +127,7 @@ TargetQueueItem *get_target_item(ElevatorStatus *status)
 
 	if (status->sweep_direction == SweepUp)
 	{
-		item = target_queue_peek(status->q_up);
+		item = target_queue_peek_offset(status->q_up, (int)status->position);
 		if (item == NULL)
 		{ // Switch direction! (we finished this direction)
 			item = target_queue_peek(status->q_down);
@@ -136,7 +136,7 @@ TargetQueueItem *get_target_item(ElevatorStatus *status)
 	}
 	else
 	{ // SweepDown
-		item = target_queue_peek(status->q_down);
+		item = target_queue_peek_offset(status->q_down, (int)status->position);
 		if (item == NULL)
 		{ // Switch direction
 			item = target_queue_peek(status->q_up);
@@ -210,11 +210,7 @@ void handleTargets(ElevatorStatus *status)
 			printf("[INFO](%d) Stop and open doors!\n", status->id);
 
 			// Remove event
-			if (status->sweep_direction == SweepUp)
-				item = target_queue_pop(status->q_up);
-			else // SweepDown
-				item = target_queue_pop(status->q_down);
-			target_queue_free_element(item);
+			target_queue_free_and_remove_element(item);
 
 			// Sending stop and open commands
 			pthread_mutex_lock(&status->sendMutex);
@@ -254,10 +250,10 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 	{
 		TargetQueueItem *targetItem;
 		while ((targetItem = target_queue_pop(status->q_up)) != NULL)
-			target_queue_free_element(targetItem);
+			free(targetItem);
 
 		while ((targetItem = target_queue_pop(status->q_down)) != NULL)
-			target_queue_free_element(targetItem);
+			free(targetItem);
 
 		status->sweep_direction = SweepIdle;
 		pthread_mutex_lock(&status->sendMutex);

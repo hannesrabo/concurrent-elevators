@@ -3,6 +3,14 @@
 
 #include <stdio.h>
 
+int compare_target_items(TargetQueue *q, TargetQueueItem *i1, TargetQueueItem *i2)
+{
+    if (q->direction == Up)
+        return i1->target_floor - i2->target_floor;
+    else // Down
+        return i2->target_floor - i1->target_floor;
+}
+
 TargetQueue *target_queue_create()
 {
     TargetQueue *q = (TargetQueue *)malloc(sizeof(TargetQueue));
@@ -21,35 +29,89 @@ TargetQueueItem *target_queue_peek(TargetQueue *q)
     return q->front;
 }
 
-TargetQueueItem *target_queue_pop(TargetQueue *q)
+TargetQueueItem *target_queue_peek_offset(TargetQueue *q, int offset)
 {
-    // Wait for a item to be available
-    if (q->front != NULL)
+    if (q == NULL)
+        return NULL;
+
+    TargetQueueItem *temp = q->front;
+    if (q->direction == Up)
     {
-        pthread_mutex_lock(&q->read_mutex);
-
-        TargetQueueItem *temp = q->front;
-        q->front = q->front->next;
-
-        pthread_mutex_unlock(&q->read_mutex);
-        return temp;
+        while (temp != NULL && temp->target_floor < offset)
+            temp = temp->next;
     }
+    // Down
     else
     {
-        return NULL;
+        while (temp != NULL && temp->target_floor > offset)
+            temp = temp->next;
     }
+
+    return temp;
 }
 
-int compare_target_items(TargetQueue *q, TargetQueueItem *i1, TargetQueueItem *i2)
+TargetQueueItem *target_queue_pop(TargetQueue *q)
 {
-    if (q->direction == Up)
-        return i1->target_floor - i2->target_floor;
-    else // Down
-        return i2->target_floor - i1->target_floor;
+    if (q->front == NULL)
+        return NULL;
+
+    pthread_mutex_lock(&q->read_mutex);
+
+    TargetQueueItem *temp = q->front;
+    q->front = q->front->next;
+
+    pthread_mutex_unlock(&q->read_mutex);
+    temp->containing_queue = NULL;
+
+    return temp;
+}
+
+TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
+{
+    if (q->front == NULL)
+        return NULL;
+
+    pthread_mutex_lock(&q->read_mutex);
+    pthread_mutex_lock(&q->write_mutex);
+
+    TargetQueueItem temp;
+    temp.target_floor = offset;
+
+    TargetQueueItem *current = q->front;
+    TargetQueueItem *previous = NULL;
+    int cmp = 0;
+    while (current != NULL)
+    {
+        cmp = compare_target_items(q, current, &temp);
+        if (cmp > 0)
+        // Does not exist
+        {
+            pthread_mutex_unlock(&q->write_mutex);
+            pthread_mutex_unlock(&q->read_mutex);
+
+            return NULL;
+        }
+        else if (cmp == 0)
+        // We found the item.
+        {
+            previous->next = current->next;
+            pthread_mutex_unlock(&q->write_mutex);
+            pthread_mutex_unlock(&q->read_mutex);
+
+            return current;
+        }
+        previous = current;
+        current = current->next;
+    }
+    pthread_mutex_unlock(&q->write_mutex);
+    pthread_mutex_unlock(&q->read_mutex);
+
+    return NULL;
 }
 
 void target_queue_push(TargetQueue *q, TargetQueueItem *item)
 {
+    pthread_mutex_lock(&q->read_mutex);
     pthread_mutex_lock(&q->write_mutex);
 
     // This is where we do the sorting and put it in the correct spot.
@@ -68,13 +130,16 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item)
         // This is a duplicate item
         {
             printf("Item discarded.\n");
-            target_queue_free_element(item);
+            free(item);
             pthread_mutex_unlock(&q->write_mutex);
+            pthread_mutex_unlock(&q->read_mutex);
             return;
         }
         previous = current;
         current = current->next;
     }
+
+    item->containing_queue = q;
 
     // NULL list
     if (current == NULL && previous == NULL)
@@ -96,12 +161,63 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item)
     }
 
     pthread_mutex_unlock(&q->write_mutex);
+    pthread_mutex_unlock(&q->read_mutex);
 }
 
-void target_queue_free_element(TargetQueueItem *item)
+void target_queue_free_and_remove_element(TargetQueueItem *item)
 {
-    if (item != NULL)
+    if (item == NULL)
+        return;
+
+    if (item->containing_queue == NULL)
+    {
         free(item);
+        return;
+    }
+
+    pthread_mutex_lock(&item->containing_queue->read_mutex);
+    pthread_mutex_lock(&item->containing_queue->write_mutex);
+
+    // remove it from the list
+    TargetQueueItem *current = item->containing_queue->front;
+    TargetQueueItem *previous = NULL;
+    int cmp = 0;
+    while (current != NULL)
+    {
+        cmp = compare_target_items(item->containing_queue, current, item);
+        if (cmp > 0)
+        // Does not exist
+        {
+            free(item);
+
+            pthread_mutex_unlock(&item->containing_queue->write_mutex);
+            pthread_mutex_unlock(&item->containing_queue->read_mutex);
+            return;
+        }
+        else if (cmp == 0)
+        // We found the item.
+        {
+            // First item
+            if (previous == NULL)
+                item->containing_queue->front = current->next;
+            else
+                previous->next = current->next;
+
+            free(item);
+
+            pthread_mutex_unlock(&item->containing_queue->write_mutex);
+            pthread_mutex_unlock(&item->containing_queue->read_mutex);
+            return;
+        }
+        previous = current;
+        current = current->next;
+    }
+
+    // does not exist
+    free(item);
+
+    pthread_mutex_unlock(&item->containing_queue->write_mutex);
+    pthread_mutex_unlock(&item->containing_queue->read_mutex);
 }
 
 // We could add some memory check here...
@@ -109,6 +225,7 @@ TargetQueueItem *target_queue_create_item(int target_floor)
 {
     TargetQueueItem *item = (TargetQueueItem *)malloc(sizeof(TargetQueueItem));
     item->target_floor = target_floor;
+    item->containing_queue = NULL;
     return item;
 }
 
