@@ -2,11 +2,11 @@
 #define _REENTRANT
 #endif
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <pthread.h>
 #include <math.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include "../hwAPI/hardwareAPI.h"
 #include "elevatorController.h"
@@ -14,15 +14,16 @@
 #include "targetQueue.h"
 
 #define DELTA_POSITION 0.001
-#define DELTA_SPEED    0.001
+#define DELTA_SPEED 0.001
 
 void updatePosition(ElevatorStatus *status, double newPosition);
 void handleCabinButton(ElevatorStatus *status, int floorNumber);
-void handleFloorButton(ElevatorStatus *status, int floorNumber);
+void handleFloorButton(ElevatorStatus *status, int floorNumber,
+					   FloorButtonType type);
 
 void *ElevatorController(void *elevator_status_arg)
 {
-	ElevatorStatus *status = (ElevatorStatus *) elevator_status_arg;
+	ElevatorStatus *status = (ElevatorStatus *)elevator_status_arg;
 	EventQueueItem *nextEvent;
 
 	// Handle events
@@ -43,28 +44,31 @@ void *ElevatorController(void *elevator_status_arg)
 			printf("Speed received: %f\n", status->speed);
 			break;
 
-		case CabinButton: ;
+		case CabinButton:;
 			int floor = nextEvent->event->cbp.floor;
 			if (floor == 32000)
 			{
-				printf("Cabin stop button pressed in cabin %d\n", nextEvent->event->cbp.cabin);
+				printf("Cabin stop button pressed in cabin %d\n",
+					   nextEvent->event->cbp.cabin);
 			}
 			else
 			{
-				// printf("Cabin button pressed in cabin %d to floor %d!\n", nextEvent->event->cbp.cabin, floor);
+				// printf("Cabin button pressed in cabin %d to floor %d!\n",
+				// nextEvent->event->cbp.cabin, floor);
 				handleCabinButton(status, floor);
 			}
 			break;
 
 		case FloorButton:
-			printf("Cart pickup assigned at %d to cart %d\n", nextEvent->event->fbp.floor, status->id);
+			printf("Cart pickup assigned at %d to cart %d\n",
+				   nextEvent->event->fbp.floor, status->id);
 			break;
 
 		default:
-			printf("[ERROR] Elevator controler %d got invalid event code (%d)!", status->id, nextEvent->type);
+			printf("[ERROR] Elevator controler %d got invalid event code (%d)!",
+				   status->id, nextEvent->type);
 			exit(1);
 			break;
-
 		}
 
 		// This is where all elements are freed
@@ -74,12 +78,14 @@ void *ElevatorController(void *elevator_status_arg)
 	return 0;
 }
 
-void handleTargets(ElevatorStatus *status) {
+void handleTargets(ElevatorStatus *status)
+{
 
 	if (status->current_movement == NotMoving)
-	{ 
-		if (status->sweep_direction == SweepIdle)
-		{ 	// Cart is not doing anything: Get a new target!
+	{
+		if (status->sweep_direction ==
+			SweepIdle)
+		{ // Cart is not doing anything: Get a new target!
 			TargetQueueItem *item;
 			status->sweep_direction = SweepUp;
 			item = target_queue_peek(status->q_up);
@@ -88,9 +94,9 @@ void handleTargets(ElevatorStatus *status) {
 				item = target_queue_peek(status->q_down);
 				status->sweep_direction = SweepDown;
 			}
-			
+
 			if (item == NULL)
-			{ 	// Still no work to do
+			{ // Still no work to do
 				status->sweep_direction = SweepIdle;
 				return;
 			}
@@ -108,28 +114,27 @@ void handleTargets(ElevatorStatus *status) {
 				status->current_movement = MovingDown;
 				handleMotor(status->id, MotorDown);
 			}
-			
-			pthread_mutex_unlock(&status->sendMutex);
 
+			pthread_mutex_unlock(&status->sendMutex);
 		}
 		else
-		{ 	// Continue in the same direction as before stop.
+		{ // Continue in the same direction as before stop.
 			TargetQueueItem *item;
 			if (status->sweep_direction == SweepUp)
 			{
 				item = target_queue_peek(status->q_up);
 				if (item == NULL)
-				{ 	// Switch direction!
+				{ // Switch direction!
 					item = target_queue_peek(status->q_down);
 					status->sweep_direction = SweepDown;
 				}
 			}
 			else
-			{	// SweepDown
+			{ // SweepDown
 				item = target_queue_peek(status->q_down);
 				if (item == NULL)
-				{	// Switch direction
-					item = target_queue_peek(status->q_up);					
+				{ // Switch direction
+					item = target_queue_peek(status->q_up);
 					status->sweep_direction = SweepUp;
 				}
 			}
@@ -147,12 +152,12 @@ void handleTargets(ElevatorStatus *status) {
 			if (status->position == target_floor)
 			{
 				if (!status->door_opened)
-				{	// Open the doors!
+				{ // Open the doors!
 					// and Pop the element!
 					if (status->sweep_direction == SweepUp)
 						item = target_queue_pop(status->q_up);
 					else // SweepDown
-						item = target_queue_pop(status->q_down);	
+						item = target_queue_pop(status->q_down);
 
 					target_queue_free_element(item);
 
@@ -162,7 +167,7 @@ void handleTargets(ElevatorStatus *status) {
 					pthread_mutex_unlock(&status->sendMutex);
 				}
 				else
-				{ 	// We already opened our door.
+				{ // We already opened our door.
 					// Let's continue the trip!
 					pthread_mutex_lock(&status->sendMutex);
 					handleDoor(status->id, DoorClose);
@@ -177,19 +182,17 @@ void handleTargets(ElevatorStatus *status) {
 						status->current_movement = MovingDown;
 						handleMotor(status->id, MotorDown);
 					}
-					
+
 					pthread_mutex_unlock(&status->sendMutex);
 				}
 			}
 			else
 			{ // Why would we ever stop here? (not on target floor)
-
 			}
 		}
-
 	}
 	else // Moving up or down (not idle)
-	{ 
+	{
 		TargetQueueItem *item;
 		if (status->current_movement == MovingUp)
 			item = target_queue_peek(status->q_up);
@@ -202,14 +205,15 @@ void handleTargets(ElevatorStatus *status) {
 			return;
 		}
 
-		double target_floor = (double) item->target_floor;
+		double target_floor = (double)item->target_floor;
 
-		if (fabs(target_floor - status->position) < DELTA_POSITION)
-		{	// We have arrived at our target!
+		if (fabs(target_floor - status->position) <
+			DELTA_POSITION)
+		{ // We have arrived at our target!
 			printf("Cart %d: Stopping!\n", status->id);
 
 			pthread_mutex_lock(&status->sendMutex);
-			
+
 			status->current_movement = NotMoving;
 			handleMotor(status->id, MotorStop);
 
@@ -237,21 +241,18 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 	if (direction >= 0)
 	{ // Elevator going up (or staying)
 		target_queue_push(status->q_up, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way up\n", status->id, floorNumber);
+		printf("Cabin (%d) will visit floor %d on the way up\n", status->id,
+			   floorNumber);
 	}
 	else
 	{ // Elevator going down
 		target_queue_push(status->q_down, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way down\n", status->id, floorNumber);		
+		printf("Cabin (%d) will visit floor %d on the way down\n", status->id,
+			   floorNumber);
 	}
 
 	handleTargets(status);
 }
 
-void handleFloorButton(ElevatorStatus *status, int floorNumber)
-{
-
-}
-
-
-
+void handleFloorButton(ElevatorStatus *status, int floorNumber,
+					   FloorButtonType type) {}

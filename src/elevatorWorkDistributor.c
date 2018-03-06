@@ -52,8 +52,8 @@ void *ElevatorWorkDistributor(void *argument)
  * Calculates the cost for different carts and then push the event on the 
  * queue with least cost.
  */
-void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorStatus **elevators) 
+void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorStatus **elevators)
 {
 	// This is just a test. Push it to the first cart
-	event_queue_push(elevators[1]->events, eventItem); 
+	event_queue_push(elevators[1]->events, eventItem);
 }

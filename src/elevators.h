@@ -35,7 +35,7 @@ typedef struct
 
 	EventQueue *events;
 	TargetQueue *q_up;
-	TargetQueue *q_down; 
+	TargetQueue *q_down;
 } ElevatorStatus;
 
 #endif

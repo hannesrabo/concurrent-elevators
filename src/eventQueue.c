@@ -9,19 +9,14 @@
 
 #include "eventQueue.h"
 
-EventQueue* event_queue_create(int unique_id) 
+EventQueue *event_queue_create()
 {
-	EventQueue* q = (EventQueue *) malloc(sizeof(EventQueue));
-
-	char name[50];
-	sprintf(name, "/elevator_queue%d", unique_id);
-
-	sem_unlink(name);
+	EventQueue *q = (EventQueue *)malloc(sizeof(EventQueue));
 
 	q->front = NULL;
 	q->last = NULL;
-	q->size = sem_open(name, O_CREAT | O_EXCL, S_IWUSR, 0);
 
+	pthread_cond_init(&q->hasElements, NULL);
 	pthread_mutex_init(&q->read_mutex, NULL);
 	pthread_mutex_init(&q->write_mutex, NULL);
 
@@ -34,30 +29,35 @@ EventQueue* event_queue_create(int unique_id)
 EventQueueItem *event_queue_pop(EventQueue *q)
 {
 	// Wait for a item to be available
-	sem_wait(q->size);
 	pthread_mutex_lock(&q->read_mutex);
+
+	// Wait if there is no elements in the queue.
+	if (q->front == NULL)
+		pthread_cond_wait(&q->hasElements, &q->read_mutex);
 
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 
-	pthread_mutex_unlock(&q->read_mutex);	
+	pthread_mutex_unlock(&q->read_mutex);
 	return temp;
 }
 
 /**
  * Non blocking push of the next element
  */
-void event_queue_push(EventQueue *q, EventQueueItem *item) 
+void event_queue_push(EventQueue *q, EventQueueItem *item)
 {
+	// We need to aquire both locks here....
+	pthread_mutex_lock(&q->read_mutex);
 	pthread_mutex_lock(&q->write_mutex);
 
 	item->next = NULL;
 
 	// If we have an empty list
-	if (q->front == NULL) 
+	if (q->front == NULL)
 	{
 		q->front = item;
-		q->last = q->front; 	// Update end to be first element as well.
+		q->last = q->front; // Update end to be first element as well.
 	}
 	else
 	{ // We can not have a null list end here. It will be the first element in that edge case
@@ -65,13 +65,16 @@ void event_queue_push(EventQueue *q, EventQueueItem *item)
 		q->last = q->last->next; // Update the end.
 	}
 
-	sem_post(q->size);
 	pthread_mutex_unlock(&q->write_mutex);
+	pthread_mutex_unlock(&q->read_mutex);
+
+	// Signal any waiting processes.
+	pthread_cond_signal(&q->hasElements);
 }
 
 void event_queue_free_element(EventQueueItem *item)
 {
-	if (item != NULL) 
+	if (item != NULL)
 	{
 		free(item->event);
 		free(item);
@@ -80,7 +83,7 @@ void event_queue_free_element(EventQueueItem *item)
 
 EventQueueItem *event_queue_create_element(EventType type, EventDesc *event)
 {
-	EventQueueItem *item = (EventQueueItem *) malloc(sizeof(EventQueueItem));
+	EventQueueItem *item = (EventQueueItem *)malloc(sizeof(EventQueueItem));
 	item->type = type;
 	item->event = event;
 	item->next = NULL;

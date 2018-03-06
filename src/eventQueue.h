@@ -18,13 +18,12 @@ typedef struct
 {
 	EventQueueItem *front;
 	EventQueueItem *last;
-	sem_t *size;
+	pthread_cond_t hasElements;
 	pthread_mutex_t write_mutex;
-	pthread_mutex_t read_mutex;	
+	pthread_mutex_t read_mutex;
 } EventQueue;
 
-EventQueue* event_queue_create(int unique_id);
-// void event_queue_init(EventQueue *q, int unique_id);
+EventQueue *event_queue_create();
 EventQueueItem *event_queue_pop(EventQueue *q);
 void event_queue_push(EventQueue *q, EventQueueItem *item);
 

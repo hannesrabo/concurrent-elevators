@@ -22,15 +22,15 @@ typedef struct
 	TargetQueueItem *front;
 	Direction direction;
 	pthread_mutex_t write_mutex;
-	pthread_mutex_t read_mutex;	
+	pthread_mutex_t read_mutex;
 } TargetQueue;
 
-TargetQueue* target_queue_create();
-TargetQueueItem* target_queue_peek(TargetQueue *q);
-TargetQueueItem* target_queue_pop(TargetQueue *q);
+TargetQueue *target_queue_create();
+TargetQueueItem *target_queue_peek(TargetQueue *q);
+TargetQueueItem *target_queue_pop(TargetQueue *q);
 void target_queue_push(TargetQueue *q, TargetQueueItem *item);
 
 void target_queue_free_element(TargetQueueItem *item);
-TargetQueueItem* target_queue_create_item(int target_floor);
+TargetQueueItem *target_queue_create_item(int target_floor);
 
 #endif

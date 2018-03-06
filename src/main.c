@@ -7,21 +7,22 @@
 #define _REENTRANT
 #endif
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "eventQueue.h"
-#include "targetQueue.h"
-#include "elevators.h"
+#include "../hwAPI/hardwareAPI.h"
 #include "elevatorController.h"
 #include "elevatorWorkDistributor.h"
+#include "elevators.h"
+#include "eventQueue.h"
 #include "masterEventHandler.h"
-#include "../hwAPI/hardwareAPI.h"
+#include "targetQueue.h"
 
-ElevatorStatus **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex);
+ElevatorStatus **allocate_elevator_information(int numberOfElevators,
+											   pthread_mutex_t sendMutex);
 
 int main(int argc, char *argv[])
 {
@@ -49,7 +50,8 @@ int main(int argc, char *argv[])
 	pthread_mutex_t sendMutex;
 	pthread_mutex_init(&sendMutex, NULL);
 
-	ElevatorStatus **elevators = allocate_elevator_information(numberOfElevators, sendMutex);
+	ElevatorStatus **elevators =
+		allocate_elevator_information(numberOfElevators, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
 
@@ -57,12 +59,13 @@ int main(int argc, char *argv[])
 	pthread_mutex_lock(&sendMutex);
 	for (i = 1; i <= numberOfElevators; i++)
 	{
-		pthread_create(&elevatorControllers[i], NULL, ElevatorController, (void *)elevators[i]);
+		pthread_create(&elevatorControllers[i], NULL, ElevatorController,
+					   (void *)elevators[i]);
 
 		// Initial position.
 		whereIs(elevators[i]->id);
 	}
-	
+
 	// Request an update of the speed of carts
 	getSpeed();
 	pthread_mutex_unlock(&sendMutex);
@@ -73,8 +76,9 @@ int main(int argc, char *argv[])
 	ewdarg.numberOfElevators = numberOfElevators;
 	ewdarg.elevators = elevators;
 	ewdarg.sendMutex = sendMutex;
-	ewdarg.events = event_queue_create(numberOfElevators + 1);
-	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)&ewdarg);
+	ewdarg.events = event_queue_create();
+	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor,
+				   (void *)&ewdarg);
 
 	// Run master event handler.
 	masterEventHandler(&ewdarg);
@@ -90,24 +94,26 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-ElevatorStatus **allocate_elevator_information(int numberOfElevators, pthread_mutex_t sendMutex)
+ElevatorStatus **allocate_elevator_information(int numberOfElevators,
+											   pthread_mutex_t sendMutex)
 {
-	ElevatorStatus **elevators = (ElevatorStatus **) malloc(sizeof(ElevatorStatus *) * numberOfElevators);
+	ElevatorStatus **elevators =
+		(ElevatorStatus **)malloc(sizeof(ElevatorStatus *) * numberOfElevators);
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
-		elevators[i] = (ElevatorStatus *) malloc(sizeof(ElevatorStatus));
+		elevators[i] = (ElevatorStatus *)malloc(sizeof(ElevatorStatus));
 
-		elevators[i]->id 				= i;
-		elevators[i]->sendMutex 		= sendMutex; // shared
-		elevators[i]->events 			= event_queue_create(i);
-		elevators[i]->q_up 				= target_queue_create();
-		elevators[i]->q_down 			= target_queue_create();
-		elevators[i]->position  		= 0;
-		elevators[i]->speed				= 0;
-		elevators[i]->sweep_direction 	= SweepIdle;
-		elevators[i]->current_movement 	= NotMoving;
-		elevators[i]->door_opened 		= false;
+		elevators[i]->id = i;
+		elevators[i]->sendMutex = sendMutex; // shared
+		elevators[i]->events = event_queue_create();
+		elevators[i]->q_up = target_queue_create();
+		elevators[i]->q_down = target_queue_create();
+		elevators[i]->position = 0;
+		elevators[i]->speed = 0;
+		elevators[i]->sweep_direction = SweepIdle;
+		elevators[i]->current_movement = NotMoving;
+		elevators[i]->door_opened = false;
 	}
 
 	return elevators;
