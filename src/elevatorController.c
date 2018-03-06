@@ -21,7 +21,6 @@
 
 void handleTargets(ElevatorStatus *status);
 void handleDoorStatus(ElevatorStatus *status);
-void updatePosition(ElevatorStatus *status, double newPosition);
 void handleCabinButton(ElevatorStatus *status, int floorNumber);
 void handleFloorButton(ElevatorStatus *status, int floorNumber,
 					   FloorButtonType type);
@@ -48,29 +47,17 @@ void *ElevatorController(void *elevator_status_arg)
 			switch (nextEvent->type)
 			{
 			case Position:
-				updatePosition(status, nextEvent->event->cp.position);
-				printf("Position received: %f\n", status->position);
+				status->position = nextEvent->event->cp.position;
 				break;
 
 			case Speed:
 				status->speed = nextEvent->event->s.speed;
-
-				printf("Speed received: %f\n", status->speed);
+				printf("Speed changed: %f\n", status->speed);
 				break;
 
 			case CabinButton:;
 				int floor = nextEvent->event->cbp.floor;
-				if (floor == 32000)
-				{
-					printf("Cabin stop button pressed in cabin %d\n",
-						   nextEvent->event->cbp.cabin);
-				}
-				else
-				{
-					// printf("Cabin button pressed in cabin %d to floor %d!\n",
-					// nextEvent->event->cbp.cabin, floor);
-					handleCabinButton(status, floor);
-				}
+				handleCabinButton(status, floor);
 				break;
 
 			case FloorButton:
@@ -85,6 +72,7 @@ void *ElevatorController(void *elevator_status_arg)
 				break;
 			}
 
+		// Do the heartbeat control updates
 		handleTargets(status);
 		handleDoorStatus(status);
 
@@ -293,13 +281,30 @@ void handleTargets(ElevatorStatus *status)
 	}
 }
 
-void updatePosition(ElevatorStatus *status, double newPosition)
-{
-	status->position = newPosition;
-}
-
 void handleCabinButton(ElevatorStatus *status, int floorNumber)
 {
+	// Panik mode!!
+	if (floorNumber == 32000)
+	{
+		TargetQueueItem *targetItem;
+		while ((targetItem = target_queue_pop(status->q_up)) != NULL)
+			target_queue_free_element(targetItem);
+
+		while ((targetItem = target_queue_pop(status->q_down)) != NULL)
+			target_queue_free_element(targetItem);
+
+		status->current_movement = NotMoving;
+		status->sweep_direction = SweepIdle;
+		pthread_mutex_lock(&status->sendMutex);
+		handleMotor(status->id, MotorStop);
+		pthread_mutex_unlock(&status->sendMutex);
+
+		printf("[INFO] Panic mode in cart %d. Stopping everything!\n", status->id);
+
+		return;
+	}
+
+	// Regular mode!
 	double direction = (double)floorNumber - status->position;
 	TargetQueueItem *targetItem = target_queue_create_item(floorNumber);
 
