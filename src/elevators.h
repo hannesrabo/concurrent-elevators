@@ -19,6 +19,13 @@ typedef enum {
 	NotMoving
 } CurrentMovement;
 
+typedef enum {
+	DoorsClosing,
+	DoorsOpening,
+	DoorsClosed,
+	DoorsOpen
+} DoorStatus;
+
 typedef struct
 {
 	int id;
@@ -31,7 +38,8 @@ typedef struct
 	// Current sweep
 	SweepDirection sweep_direction;
 	CurrentMovement current_movement;
-	bool door_opened;
+	DoorStatus door_status;
+	double door_action_time;
 
 	EventQueue *events;
 	TargetQueue *q_up;

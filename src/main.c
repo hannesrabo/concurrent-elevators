@@ -113,7 +113,8 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators,
 		elevators[i]->speed = 0;
 		elevators[i]->sweep_direction = SweepIdle;
 		elevators[i]->current_movement = NotMoving;
-		elevators[i]->door_opened = false;
+		elevators[i]->door_status = DoorsClosed;
+		elevators[i]->door_action_time = 0;
 	}
 
 	return elevators;
