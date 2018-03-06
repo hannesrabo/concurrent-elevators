@@ -22,8 +22,7 @@
 void handleTargets(ElevatorStatus *status);
 void handleDoorStatus(ElevatorStatus *status);
 void handleCabinButton(ElevatorStatus *status, int floorNumber);
-void handleFloorButton(ElevatorStatus *status, int floorNumber,
-					   FloorButtonType type);
+void handleFloorButton(ElevatorStatus *status, int floorNumber, FloorButtonType type);
 
 double get_time()
 {
@@ -52,7 +51,7 @@ void *ElevatorController(void *elevator_status_arg)
 
 			case Speed:
 				status->speed = nextEvent->event->s.speed;
-				printf("Speed changed: %f\n", status->speed);
+				printf("[INFO](%d) Speed changed: %f\n", status->id, status->speed);
 				break;
 
 			case CabinButton:;
@@ -61,8 +60,7 @@ void *ElevatorController(void *elevator_status_arg)
 				break;
 
 			case FloorButton:
-				printf("Cart pickup assigned at %d to cart %d\n",
-					   nextEvent->event->fbp.floor, status->id);
+				handleFloorButton(status, nextEvent->event->fbp.floor, nextEvent->event->fbp.type);
 				break;
 
 			default:
@@ -91,14 +89,14 @@ void handleDoorStatus(ElevatorStatus *status)
 		if (get_time() - status->door_action_time > DOOR_ACTION_TIME)
 		{
 			status->door_status = DoorsClosed;
-			printf("Doors now closed!\n");
+			printf("[INFO](%d) Doors closed!\n", status->id);
 		}
 		break;
 	case DoorsOpening:
 		if (get_time() - status->door_action_time > DOOR_ACTION_TIME)
 		{
 			status->door_status = DoorsOpen;
-			printf("Doors now open!\n");
+			printf("[INFO](%d) Doors open!\n", status->id);
 		}
 		break;
 	case DoorsClosed:
@@ -106,7 +104,6 @@ void handleDoorStatus(ElevatorStatus *status)
 		break;
 	case DoorsOpen:
 		// Try to close the doors!
-		printf("Closing doors again\n");
 
 		status->door_status = DoorsClosing;
 		status->door_action_time = get_time();
@@ -122,160 +119,129 @@ void handleDoorStatus(ElevatorStatus *status)
 	}
 }
 
+TargetQueueItem *get_target_item(ElevatorStatus *status)
+{
+	TargetQueueItem *item;
+	if (status->sweep_direction == SweepIdle)
+		status->sweep_direction = SweepUp;
+
+	if (status->sweep_direction == SweepUp)
+	{
+		item = target_queue_peek(status->q_up);
+		if (item == NULL)
+		{ // Switch direction! (we finished this direction)
+			item = target_queue_peek(status->q_down);
+			status->sweep_direction = SweepDown;
+		}
+	}
+	else
+	{ // SweepDown
+		item = target_queue_peek(status->q_down);
+		if (item == NULL)
+		{ // Switch direction
+			item = target_queue_peek(status->q_up);
+			status->sweep_direction = SweepUp;
+		}
+	}
+
+	if (item == NULL)
+		status->sweep_direction = SweepIdle;
+
+	return item;
+}
+
 void handleTargets(ElevatorStatus *status)
 {
 	// Do nothing to do if we are sitting here waiting for the doors
 	if (status->door_status != DoorsClosed)
 		return;
 
-	// If we are not already moving!
-	if (status->current_movement == NotMoving)
+	// Extract the relevant direction
+	TargetQueueItem *item = get_target_item(status);
+
+	// Cart is not doing anything: Get a new target!
+	if (status->sweep_direction == SweepIdle)
 	{
-		// Cart is not doing anything: Get a new target!
-		if (status->sweep_direction == SweepIdle)
-		{
-			// Extract the relevant direction
-			TargetQueueItem *item;
-			status->sweep_direction = SweepUp;
-			item = target_queue_peek(status->q_up);
-			if (item == NULL)
-			{
-				item = target_queue_peek(status->q_down);
-				status->sweep_direction = SweepDown;
-			}
-
-			if (item == NULL)
-			{ // Still no work to do
-				status->sweep_direction = SweepIdle;
-
-				return;
-			}
-
-			// If we are at the correct floor!
-			if (fabs(item->target_floor - status->position) < DELTA_POSITION)
-			{
-				// This is not a real sweap
-				status->sweep_direction = SweepIdle;
-				return;
-			}
-
-			// Get going now! (activate motors in relevant direction)
-			pthread_mutex_lock(&status->sendMutex);
-
-			if (status->sweep_direction == SweepUp)
-			{
-				status->current_movement = MovingUp;
-				handleMotor(status->id, MotorUp);
-			}
-			else
-			{
-				status->current_movement = MovingDown;
-				handleMotor(status->id, MotorDown);
-			}
-
-			pthread_mutex_unlock(&status->sendMutex);
-		}
-		// (cart is not moving but doing a sweep) : Continue in the same direction as before stop.
-		else
-		{
-			TargetQueueItem *item;
-			if (status->sweep_direction == SweepUp)
-			{
-				item = target_queue_peek(status->q_up);
-				if (item == NULL)
-				{ // Switch direction! (we finished this direction)
-					item = target_queue_peek(status->q_down);
-					status->sweep_direction = SweepDown;
-				}
-			}
-			else
-			{ // SweepDown
-				item = target_queue_peek(status->q_down);
-				if (item == NULL)
-				{ // Switch direction
-					item = target_queue_peek(status->q_up);
-					status->sweep_direction = SweepUp;
-				}
-			}
-
-			// Edge case: No more work left!
-			if (item == NULL)
-			{
-				status->sweep_direction = SweepIdle;
-
-				printf("[Infor] Idling until something is in the queue!\n");
-				return;
-			}
-
-			int target_floor = item->target_floor;
-
-			// We are already at the correct floor (open doors)
-			if (fabs(target_floor - status->position) < DELTA_POSITION)
-			{
-				printf("[Infor] Open doors on same floor!\n");
-
-				// Remove event
-				if (status->sweep_direction == SweepUp)
-					item = target_queue_pop(status->q_up);
-				else // SweepDown
-					item = target_queue_pop(status->q_down);
-				target_queue_free_element(item);
-
-				// Doors
-				pthread_mutex_lock(&status->sendMutex);
-				handleDoor(status->id, DoorOpen);
-				pthread_mutex_unlock(&status->sendMutex);
-
-				status->door_action_time = get_time();
-				status->door_status = DoorsOpening;
-			}
-			// Not on the correct floor. Time to continue sweep!
-			else
-			{
-				printf("[infor] Continues sweep!\n");
-				pthread_mutex_lock(&status->sendMutex);
-
-				if (status->sweep_direction == SweepUp)
-				{
-					status->current_movement = MovingUp;
-					handleMotor(status->id, MotorUp);
-				}
-				else
-				{
-					status->current_movement = MovingDown;
-					handleMotor(status->id, MotorDown);
-				}
-
-				pthread_mutex_unlock(&status->sendMutex);
-			}
-		}
-	}
-	// Cart is currently moving up or down (!CartIdle)
-	else
-	{
-		TargetQueueItem *item;
-		if (status->current_movement == MovingDown)
-			item = target_queue_peek(status->q_down);
-		else // Moving up or not moving
-			item = target_queue_peek(status->q_up);
-
+		// No work
 		if (item == NULL)
+			return;
+
+		// If we are at the correct floor!
+		if (fabs(item->target_floor - status->position) < DELTA_POSITION)
 		{
-			printf("[ERROR](%d) Moving towards unknown target\n", status->id);
+			// This is not a real sweap
+			status->sweep_direction = SweepIdle;
 			return;
 		}
 
-		double target_floor = (double)item->target_floor;
+		// Get going now! (activate motors in relevant direction)
+		pthread_mutex_lock(&status->sendMutex);
 
+		if (item->target_floor > status->position)
+		{
+			status->sweep_direction = SweepUp;
+			handleMotor(status->id, MotorUp);
+		}
+		else
+		{
+			status->sweep_direction = SweepDown;
+			handleMotor(status->id, MotorDown);
+		}
+
+		pthread_mutex_unlock(&status->sendMutex);
+	}
+	// (cart is doing a sweep) : Continue in the same direction as before stop.
+	else
+	{
+		// Start ideling
+		if (item == NULL)
+		{
+			status->sweep_direction = SweepIdle;
+			printf("[INFO](%d) Now idle!\n", status->id);
+			return;
+		}
+
+		int target_floor = item->target_floor;
+
+		// We are already at the correct floor (open doors)
 		if (fabs(target_floor - status->position) < DELTA_POSITION)
-		{ // We have arrived at our target!
-			printf("Cart %d: Stopping!\n", status->id);
+		{
 
-			status->current_movement = NotMoving;
+			printf("[INFO](%d) Stop and open doors!\n", status->id);
+
+			// Remove event
+			if (status->sweep_direction == SweepUp)
+				item = target_queue_pop(status->q_up);
+			else // SweepDown
+				item = target_queue_pop(status->q_down);
+			target_queue_free_element(item);
 
 			// Sending stop and open commands
 			pthread_mutex_lock(&status->sendMutex);
 			handleMotor(status->id, MotorStop);
+			handleDoor(status->id, DoorOpen);
+			pthread_mutex_unlock(&status->sendMutex);
+
+			status->door_action_time = get_time();
+			status->door_status = DoorsOpening;
+		}
+		// Not on the correct floor. Time to continue sweep!
+		else
+		{
+			// printf("[INFO](%d) Continues sweep!\n", status->id);
+			pthread_mutex_lock(&status->sendMutex);
+
+			if (item->target_floor > status->position)
+			{
+				status->sweep_direction = SweepUp;
+				handleMotor(status->id, MotorUp);
+			}
+			else
+			{
+				status->sweep_direction = SweepDown;
+				handleMotor(status->id, MotorDown);
+			}
+
 			pthread_mutex_unlock(&status->sendMutex);
 		}
 	}
@@ -293,13 +259,12 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 		while ((targetItem = target_queue_pop(status->q_down)) != NULL)
 			target_queue_free_element(targetItem);
 
-		status->current_movement = NotMoving;
 		status->sweep_direction = SweepIdle;
 		pthread_mutex_lock(&status->sendMutex);
 		handleMotor(status->id, MotorStop);
 		pthread_mutex_unlock(&status->sendMutex);
 
-		printf("[INFO] Panic mode in cart %d. Stopping everything!\n", status->id);
+		printf("[INFO](%d) Panic mode. Stopping everything!\n", status->id);
 
 		return;
 	}
@@ -311,16 +276,31 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 	if (direction >= 0)
 	{ // Elevator going up (or staying)
 		target_queue_push(status->q_up, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way up [%f]\n", status->id,
-			   floorNumber, direction);
+		printf("[INFO](%d) Cabin will visit floor %d on the way up. (internal)\n", status->id, floorNumber);
 	}
 	else
 	{ // Elevator going down
 		target_queue_push(status->q_down, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way down [%f]\n", status->id,
-			   floorNumber, direction);
+		printf("[INFO](%d) Cabin will visit floor %d on the way down. (internal)\n", status->id, floorNumber);
 	}
 }
 
-void handleFloorButton(ElevatorStatus *status, int floorNumber,
-					   FloorButtonType type) {}
+/**
+ * This is where we handle events from passengers outside of the cart.
+ */
+void handleFloorButton(ElevatorStatus *status, int floorNumber, FloorButtonType type)
+{
+	// This menas that we must add it to the correct list depending on
+	// intended travel direction.
+	TargetQueueItem *targetItem = target_queue_create_item(floorNumber);
+	if (type == GoingUp)
+	{
+		target_queue_push(status->q_up, targetItem);
+		printf("[INFO](%d) Cabin will visit floor %d on the way up.\n", status->id, floorNumber);
+	}
+	else // GoingDown
+	{
+		target_queue_push(status->q_down, targetItem);
+		printf("[INFO](%d) Cabin will visit floor %d on the way down.\n", status->id, floorNumber);
+	}
+}

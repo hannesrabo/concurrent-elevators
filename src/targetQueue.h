@@ -25,6 +25,8 @@ typedef struct
 	pthread_mutex_t read_mutex;
 } TargetQueue;
 
+void target_queue_print_list(TargetQueue *q);
+
 TargetQueue *target_queue_create();
 TargetQueueItem *target_queue_peek(TargetQueue *q);
 TargetQueueItem *target_queue_pop(TargetQueue *q);

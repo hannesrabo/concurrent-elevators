@@ -37,7 +37,6 @@ typedef struct
 
 	// Current sweep
 	SweepDirection sweep_direction;
-	CurrentMovement current_movement;
 	DoorStatus door_status;
 	double door_action_time;
 

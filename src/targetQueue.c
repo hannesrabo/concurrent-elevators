@@ -111,3 +111,16 @@ TargetQueueItem *target_queue_create_item(int target_floor)
     item->target_floor = target_floor;
     return item;
 }
+
+void target_queue_print_list(TargetQueue *q)
+{
+    TargetQueueItem *i = q->front;
+
+    printf("[");
+    while (i != NULL)
+    {
+        printf("%d, ", i->target_floor);
+        i = i->next;
+    }
+    printf("]\n");
+}
