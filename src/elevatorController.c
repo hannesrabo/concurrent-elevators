@@ -15,7 +15,9 @@
 
 #define DELTA_POSITION 0.001
 #define DELTA_SPEED 0.001
+#define HEARTBEAT_TIME_MS 300
 
+void handleTargets(ElevatorStatus *status);
 void updatePosition(ElevatorStatus *status, double newPosition);
 void handleCabinButton(ElevatorStatus *status, int floorNumber);
 void handleFloorButton(ElevatorStatus *status, int floorNumber,
@@ -29,47 +31,50 @@ void *ElevatorController(void *elevator_status_arg)
 	// Handle events
 	while (1)
 	{
-		nextEvent = event_queue_pop(status->events);
+		nextEvent = event_queue_timed_pop(status->events, HEARTBEAT_TIME_MS);
 
-		switch (nextEvent->type)
-		{
-		case Position:
-			updatePosition(status, nextEvent->event->cp.position);
-			printf("Position received: %f\n", status->position);
-			break;
-
-		case Speed:
-			status->speed = nextEvent->event->s.speed;
-
-			printf("Speed received: %f\n", status->speed);
-			break;
-
-		case CabinButton:;
-			int floor = nextEvent->event->cbp.floor;
-			if (floor == 32000)
+		if (nextEvent != NULL)
+			switch (nextEvent->type)
 			{
-				printf("Cabin stop button pressed in cabin %d\n",
-					   nextEvent->event->cbp.cabin);
-			}
-			else
-			{
-				// printf("Cabin button pressed in cabin %d to floor %d!\n",
-				// nextEvent->event->cbp.cabin, floor);
-				handleCabinButton(status, floor);
-			}
-			break;
+			case Position:
+				updatePosition(status, nextEvent->event->cp.position);
+				printf("Position received: %f\n", status->position);
+				break;
 
-		case FloorButton:
-			printf("Cart pickup assigned at %d to cart %d\n",
-				   nextEvent->event->fbp.floor, status->id);
-			break;
+			case Speed:
+				status->speed = nextEvent->event->s.speed;
 
-		default:
-			printf("[ERROR] Elevator controler %d got invalid event code (%d)!",
-				   status->id, nextEvent->type);
-			exit(1);
-			break;
-		}
+				printf("Speed received: %f\n", status->speed);
+				break;
+
+			case CabinButton:;
+				int floor = nextEvent->event->cbp.floor;
+				if (floor == 32000)
+				{
+					printf("Cabin stop button pressed in cabin %d\n",
+						   nextEvent->event->cbp.cabin);
+				}
+				else
+				{
+					// printf("Cabin button pressed in cabin %d to floor %d!\n",
+					// nextEvent->event->cbp.cabin, floor);
+					handleCabinButton(status, floor);
+				}
+				break;
+
+			case FloorButton:
+				printf("Cart pickup assigned at %d to cart %d\n",
+					   nextEvent->event->fbp.floor, status->id);
+				break;
+
+			default:
+				printf("[ERROR] Elevator controler %d got invalid event code (%d)!",
+					   status->id, nextEvent->type);
+				exit(1);
+				break;
+			}
+
+		handleTargets(status);
 
 		// This is where all elements are freed
 		event_queue_free_element(nextEvent);
@@ -80,7 +85,6 @@ void *ElevatorController(void *elevator_status_arg)
 
 void handleTargets(ElevatorStatus *status)
 {
-
 	if (status->current_movement == NotMoving)
 	{
 		if (status->sweep_direction ==
@@ -228,7 +232,6 @@ void handleTargets(ElevatorStatus *status)
 void updatePosition(ElevatorStatus *status, double newPosition)
 {
 	status->position = newPosition;
-	handleTargets(status);
 	// This is where we need to handle when to stop the elevators.
 	// printf("Position received: %f\n", status->position);
 }
@@ -250,8 +253,6 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 		printf("Cabin (%d) will visit floor %d on the way down\n", status->id,
 			   floorNumber);
 	}
-
-	handleTargets(status);
 }
 
 void handleFloorButton(ElevatorStatus *status, int floorNumber,

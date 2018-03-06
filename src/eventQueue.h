@@ -25,6 +25,7 @@ typedef struct
 
 EventQueue *event_queue_create();
 EventQueueItem *event_queue_pop(EventQueue *q);
+EventQueueItem *event_queue_timed_pop(EventQueue *q, long time_ms);
 void event_queue_push(EventQueue *q, EventQueueItem *item);
 
 void event_queue_free_element(EventQueueItem *item);

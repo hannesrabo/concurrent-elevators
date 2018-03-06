@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <sys/time.h>
 
 #include "eventQueue.h"
 
@@ -34,6 +36,45 @@ EventQueueItem *event_queue_pop(EventQueue *q)
 	// Wait if there is no elements in the queue.
 	if (q->front == NULL)
 		pthread_cond_wait(&q->hasElements, &q->read_mutex);
+
+	EventQueueItem *temp = q->front;
+	q->front = q->front->next;
+
+	pthread_mutex_unlock(&q->read_mutex);
+	return temp;
+}
+
+/**
+ * Blocking but with max time.
+ */
+EventQueueItem *event_queue_timed_pop(EventQueue *q, long time_ms)
+{
+	// Wait for a item to be available
+	pthread_mutex_lock(&q->read_mutex);
+
+	// Loading time
+	struct timespec ts;
+	struct timeval now;
+	int rt;
+
+	gettimeofday(&now, NULL);
+
+	ts.tv_sec = time(NULL) + time_ms / 1000;
+	ts.tv_nsec = now.tv_usec * 1000 + 1000 * 1000 * (time_ms % 1000);
+	ts.tv_sec += now.tv_usec / (1000 * 1000);
+	ts.tv_nsec %= (1000 * 1000 * 1000);
+
+	// Wait if there is no elements in the queue.
+	if (q->front == NULL)
+	{
+		rt = pthread_cond_timedwait(&q->hasElements, &q->read_mutex, &ts);
+
+		if (rt != 0)
+		{
+			pthread_mutex_unlock(&q->read_mutex);
+			return NULL;
+		}
+	}
 
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
