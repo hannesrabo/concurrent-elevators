@@ -14,7 +14,7 @@
 #include "elevators.h"
 #include "targetQueue.h"
 
-#define DELTA_POSITION 0.001
+#define DELTA_POSITION 0.05
 #define DELTA_SPEED 0.001
 #define HEARTBEAT_TIME_MS 300
 #define DOOR_ACTION_TIME 1
@@ -163,6 +163,14 @@ void handleTargets(ElevatorStatus *status)
 				return;
 			}
 
+			// If we are at the correct floor!
+			if (fabs(item->target_floor - status->position) < DELTA_POSITION)
+			{
+				// This is not a real sweap
+				status->sweep_direction = SweepIdle;
+				return;
+			}
+
 			// Get going now! (activate motors in relevant direction)
 			pthread_mutex_lock(&status->sendMutex);
 
@@ -258,10 +266,10 @@ void handleTargets(ElevatorStatus *status)
 	else
 	{
 		TargetQueueItem *item;
-		if (status->current_movement == MovingUp)
-			item = target_queue_peek(status->q_up);
-		else // Moving down
+		if (status->current_movement == MovingDown)
 			item = target_queue_peek(status->q_down);
+		else // Moving up or not moving
+			item = target_queue_peek(status->q_up);
 
 		if (item == NULL)
 		{
@@ -292,20 +300,20 @@ void updatePosition(ElevatorStatus *status, double newPosition)
 
 void handleCabinButton(ElevatorStatus *status, int floorNumber)
 {
-	int direction = floorNumber - status->position;
+	double direction = (double)floorNumber - status->position;
 	TargetQueueItem *targetItem = target_queue_create_item(floorNumber);
 
 	if (direction >= 0)
 	{ // Elevator going up (or staying)
 		target_queue_push(status->q_up, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way up\n", status->id,
-			   floorNumber);
+		printf("Cabin (%d) will visit floor %d on the way up [%f]\n", status->id,
+			   floorNumber, direction);
 	}
 	else
 	{ // Elevator going down
 		target_queue_push(status->q_down, targetItem);
-		printf("Cabin (%d) will visit floor %d on the way down\n", status->id,
-			   floorNumber);
+		printf("Cabin (%d) will visit floor %d on the way down [%f]\n", status->id,
+			   floorNumber, direction);
 	}
 }
 
