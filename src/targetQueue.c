@@ -1,6 +1,8 @@
 #include "targetQueue.h"
 #include <stdlib.h>
 
+#include <stdio.h>
+
 TargetQueue* target_queue_create()
 {
     TargetQueue *q = (TargetQueue *) malloc(sizeof(TargetQueue));
@@ -52,11 +54,22 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item)
     // This is where we do the sorting and put it in the correct spot.
     TargetQueueItem *current = q->front;
     TargetQueueItem *previous = NULL;
+    int cmp = 0;
     while(current != NULL)
     {
-        if (compare_target_items(q, current, item) >= 0)
-        { // If we found the position
+        cmp = compare_target_items(q, current, item); 
+        if (cmp > 0)
+        // If we found the position
+        { 
             break;
+        }
+        else if (cmp == 0)
+        // This is a duplicate item
+        {
+            printf("Item discarded.\n");
+            target_queue_free_element(item);
+            pthread_mutex_unlock(&q->write_mutex);
+            return;
         }
         previous = current;
         current = current->next;

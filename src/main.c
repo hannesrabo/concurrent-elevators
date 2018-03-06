@@ -11,6 +11,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 #include "eventQueue.h"
 #include "targetQueue.h"
@@ -96,13 +97,17 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators, pthread_mu
 	for (i = 1; i <= numberOfElevators; i++)
 	{
 		elevators[i] = (ElevatorStatus *) malloc(sizeof(ElevatorStatus));
-		elevators[i]->id 		= i;
-		elevators[i]->sendMutex = sendMutex; // shared
-		elevators[i]->events 	= event_queue_create(i);
-		elevators[i]->q_up 		= target_queue_create();
-		elevators[i]->q_down 	= target_queue_create();
-		elevators[i]->position  = 0;
-		elevators[i]->speed		= 0;
+
+		elevators[i]->id 				= i;
+		elevators[i]->sendMutex 		= sendMutex; // shared
+		elevators[i]->events 			= event_queue_create(i);
+		elevators[i]->q_up 				= target_queue_create();
+		elevators[i]->q_down 			= target_queue_create();
+		elevators[i]->position  		= 0;
+		elevators[i]->speed				= 0;
+		elevators[i]->sweep_direction 	= SweepIdle;
+		elevators[i]->current_movement 	= NotMoving;
+		elevators[i]->door_opened 		= false;
 	}
 
 	return elevators;
