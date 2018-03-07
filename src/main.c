@@ -21,8 +21,7 @@
 #include "masterEventHandler.h"
 #include "targetQueue.h"
 
-ElevatorStatus **allocate_elevator_information(int numberOfElevators,
-											   pthread_mutex_t sendMutex);
+ElevatorStatus **allocate_elevator_information(int numberOfElevators, int numberOfFloors, pthread_mutex_t sendMutex);
 
 int main(int argc, char *argv[])
 {
@@ -47,11 +46,13 @@ int main(int argc, char *argv[])
 	initHW(hostname, port);
 
 	int numberOfElevators = 1;
+	int numberOfFloors = 5;
+
 	pthread_mutex_t sendMutex;
 	pthread_mutex_init(&sendMutex, NULL);
 
 	ElevatorStatus **elevators =
-		allocate_elevator_information(numberOfElevators, sendMutex);
+		allocate_elevator_information(numberOfElevators, numberOfFloors, sendMutex);
 	pthread_t elevatorControllers[numberOfElevators];
 	int i;
 
@@ -77,8 +78,7 @@ int main(int argc, char *argv[])
 	ewdarg.elevators = elevators;
 	ewdarg.sendMutex = sendMutex;
 	ewdarg.events = event_queue_create();
-	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor,
-				   (void *)&ewdarg);
+	pthread_create(&elevatorWorkDistributor, NULL, ElevatorWorkDistributor, (void *)&ewdarg);
 
 	// Run master event handler.
 	masterEventHandler(&ewdarg);
@@ -94,11 +94,10 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-ElevatorStatus **allocate_elevator_information(int numberOfElevators,
-											   pthread_mutex_t sendMutex)
+ElevatorStatus **allocate_elevator_information(int numberOfElevators, int numberOfFloors, pthread_mutex_t sendMutex)
 {
-	ElevatorStatus **elevators =
-		(ElevatorStatus **)malloc(sizeof(ElevatorStatus *) * numberOfElevators);
+	ElevatorStatus **elevators = (ElevatorStatus **)malloc(sizeof(ElevatorStatus *) * numberOfElevators);
+
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
@@ -109,13 +108,14 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators,
 		elevators[i]->events = event_queue_create();
 		elevators[i]->q_up = target_queue_create();
 		elevators[i]->q_down = target_queue_create();
+		elevators[i]->q_down->direction = Down;
+
 		elevators[i]->position = 0;
 		elevators[i]->speed = 0;
+		elevators[i]->door_action_time = 0;
+		elevators[i]->top_floor = numberOfFloors;
 		elevators[i]->sweep_direction = SweepIdle;
 		elevators[i]->door_status = DoorsClosed;
-		elevators[i]->door_action_time = 0;
-
-		elevators[i]->q_down->direction = Down;
 	}
 
 	return elevators;

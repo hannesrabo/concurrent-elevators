@@ -15,6 +15,7 @@ typedef struct TargetQueue TargetQueue;
 struct TargetQueueItem
 {
 	int target_floor;
+	int probable_extra_target;
 	TargetQueueItem *next;
 	TargetQueue *containing_queue;
 };
@@ -38,5 +39,6 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item);
 
 void target_queue_free_and_remove_element(TargetQueueItem *item);
 TargetQueueItem *target_queue_create_item(int target_floor);
+TargetQueueItem *target_queue_create_item_w_target(int target_floor, int probable_target);
 
 #endif

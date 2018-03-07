@@ -282,21 +282,49 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 }
 
 /**
+ * This function calculates a probable extra target for external button presses.
+ */
+int getProbableExtraTarget(int topFloor, int floorNumber, FloorButtonType type)
+{
+	int probable_extra_target;
+
+	if (type == GoingUp)
+	{
+		probable_extra_target = (int)((topFloor + floorNumber) / 2);
+		if (probable_extra_target == floorNumber)
+			probable_extra_target++;
+	}
+	else // GoingDown
+	{
+		probable_extra_target = floorNumber / 2;
+		if (probable_extra_target == floorNumber)
+			probable_extra_target--;
+	}
+
+	return probable_extra_target;
+}
+
+/**
  * This is where we handle events from passengers outside of the cart.
  */
 void handleFloorButton(ElevatorStatus *status, int floorNumber, FloorButtonType type)
 {
 	// This menas that we must add it to the correct list depending on
 	// intended travel direction.
-	TargetQueueItem *targetItem = target_queue_create_item(floorNumber);
+	TargetQueue *tempQueue;
+	int probable_extra_target = getProbableExtraTarget(status->top_floor, floorNumber, type);
+
 	if (type == GoingUp)
 	{
-		target_queue_push(status->q_up, targetItem);
-		printf("[INFO](%d) Cabin will visit floor %d on the way up.\n", status->id, floorNumber);
+		tempQueue = status->q_up;
+		printf("[INFO](%d) Cabin will visit floor %d on the way up. Extra: %d\n", status->id, floorNumber, probable_extra_target);
 	}
 	else // GoingDown
 	{
-		target_queue_push(status->q_down, targetItem);
-		printf("[INFO](%d) Cabin will visit floor %d on the way down.\n", status->id, floorNumber);
+		tempQueue = status->q_down;
+		printf("[INFO](%d) Cabin will visit floor %d on the way down. Extra: %d\n", status->id, floorNumber, probable_extra_target);
 	}
+
+	TargetQueueItem *targetItem = target_queue_create_item_w_target(floorNumber, probable_extra_target);
+	target_queue_push(tempQueue, targetItem);
 }

@@ -40,9 +40,11 @@ typedef struct
 	DoorStatus door_status;
 	double door_action_time;
 
+	// Elevator
 	EventQueue *events;
 	TargetQueue *q_up;
 	TargetQueue *q_down;
+	int top_floor;
 } ElevatorStatus;
 
 #endif

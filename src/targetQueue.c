@@ -220,12 +220,20 @@ void target_queue_free_and_remove_element(TargetQueueItem *item)
     pthread_mutex_unlock(&item->containing_queue->read_mutex);
 }
 
-// We could add some memory check here...
+// TODO: We could add some memory check here...
 TargetQueueItem *target_queue_create_item(int target_floor)
 {
     TargetQueueItem *item = (TargetQueueItem *)malloc(sizeof(TargetQueueItem));
     item->target_floor = target_floor;
+    item->probable_extra_target = -1;
     item->containing_queue = NULL;
+    return item;
+}
+
+TargetQueueItem *target_queue_create_item_w_target(int target_floor, int probable_target)
+{
+    TargetQueueItem *item = target_queue_create_item(target_floor);
+    item->probable_extra_target = probable_target;
     return item;
 }
 

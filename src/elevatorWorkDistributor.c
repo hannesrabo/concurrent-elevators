@@ -7,8 +7,10 @@
 #include <string.h>
 #include "elevatorWorkDistributor.h"
 #include "elevators.h"
+#include "elevatorController.h"
 
-void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorStatus **elevators);
+void handleFloorButtonPress(ElevatorWorkDistributorArgument *ewdarg, EventQueueItem *eventItem, ElevatorStatus **elevators);
+int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus **elevators, int numberOfElevators);
 
 /**
  * This worker thread is handeling computation of paths and work assignment
@@ -30,7 +32,7 @@ void *ElevatorWorkDistributor(void *argument)
 		{
 		case FloorButton:
 			// We need to push the event on the correct queue.
-			handleFloorButtonPress(nextEvent, elevators);
+			handleFloorButtonPress(ewdarg, nextEvent, elevators);
 			break;
 		case CabinButton:
 			// This is handled by the cabin itself.
@@ -50,10 +52,78 @@ void *ElevatorWorkDistributor(void *argument)
 
 /**
  * Calculates the cost for different carts and then push the event on the 
- * queue with least cost.
+ * queue with least cost. 
  */
-void handleFloorButtonPress(EventQueueItem *eventItem, ElevatorStatus **elevators)
+void handleFloorButtonPress(ElevatorWorkDistributorArgument *ewdarg, EventQueueItem *eventItem, ElevatorStatus **elevators)
 {
 	// This is just a test. Push it to the first cart
-	event_queue_push(elevators[1]->events, eventItem);
+	int cart = get_optimal_cart(&eventItem->event->fbp, elevators, ewdarg->numberOfElevators);
+
+	event_queue_push(elevators[cart]->events, eventItem);
+}
+
+/**
+ * Calculates the cost for adding this item to all of the elevators
+ */
+int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus **elevators, int numberOfElevators)
+{
+	int best_index = 1;
+	int current_index = 1;
+	double best_index_cost = -1;
+
+	for (current_index = 1; current_index <= numberOfElevators; current_index++)
+	{
+		double temp_cost = calculate_cart_cost(floorButtonPressDesc, elevators[current_index]);
+		if (best_index_cost == -1 || temp_cost < best_index_cost)
+		{
+			best_index_cost = temp_cost;
+			best_index = current_index;
+		}
+	}
+
+	return best_index;
+}
+
+/**
+ * Calculate the cost when adding this item to this cart.
+ */
+double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus *elevator)
+{
+	bool stops[elevator->top_floor * 2];
+
+	for (int i = 0; i < elevator->top_floor * 2; i++)
+	{
+		stops[i] = false;
+	}
+
+	// Getting all stops
+	TargetQueueItem *tempItem = target_queue_peek(elevator->q_up);
+	while (tempItem != NULL)
+	{
+		stops[tempItem->target_floor] = true;
+
+		if (tempItem->probable_extra_target != -1)
+			stops[tempItem->probable_extra_target] = true;
+
+		tempItem = tempItem->next;
+	}
+
+	tempItem = target_queue_peek(elevator->q_down);
+	while (tempItem != NULL)
+	{
+		stops[elevator->top_floor + tempItem->target_floor] = true;
+
+		if (tempItem->probable_extra_target != -1)
+			stops[elevator->top_floor + tempItem->probable_extra_target] = true;
+
+		tempItem = tempItem->next;
+	}
+
+	// Adding probable extra target for this item
+	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type)] = true;
+
+		// This is where we are supposed to simulate the sweeep in both directions.
+	// TODO: Create the algorithm.
+
+	return -1;
 }
