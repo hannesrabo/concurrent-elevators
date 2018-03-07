@@ -11,6 +11,7 @@
 
 void handleFloorButtonPress(ElevatorWorkDistributorArgument *ewdarg, EventQueueItem *eventItem, ElevatorStatus **elevators);
 int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus **elevators, int numberOfElevators);
+double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus *elevator);
 
 /**
  * This worker thread is handeling computation of paths and work assignment
