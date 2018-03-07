@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <string.h>
 #include "elevatorWorkDistributor.h"
 #include "elevators.h"
@@ -90,15 +91,61 @@ int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus 
  */
 double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus *elevator)
 {
-	bool stops[elevator->top_floor * 2];
-
-	for (int i = 0; i < elevator->top_floor * 2; i++)
+	/**
+	 *  We do 3 sweeps
+	 * 
+	 * i)   One for all floors in the same direction as elevator AND (after elevator position OR same as elevator position)
+	 * ii)  One for all floors in the oposite direction
+	 * iii) One for all floors in the same direction as elevator AND before current position
+	 * 
+	 */
+	bool stops[elevator->top_floor * 3];
+	int i;
+	for (i = 0; i < elevator->top_floor * 3; i++)
 	{
 		stops[i] = false;
 	}
 
+	// Get elevator information
+	SweepDirection sweep_direction = elevator->sweep_direction;
+
+	// Figure out where to start sweeping if the elevator is idle
+	if (sweep_direction == SweepIdle)
+	{
+		if (floorButtonPressDesc->floor > elevator->position)
+		{
+			sweep_direction = SweepUp;
+		}
+		else
+		{
+			sweep_direction = SweepDown;
+		}
+	}
+
+	// Figure out which queue to look at
+	TargetQueueItem *tempItem;
+	TargetQueue *firstQueue;
+	TargetQueue *secondQueue;
+	if (sweep_direction == SweepUp)
+	{
+		firstQueue = elevator->q_up;
+	}
+	else
+	{
+		firstQueue = elevator->q_down;
+	}
+
+	tempItem = target_queue_peek(firstQueue);
+
+	// Move past elevator for first sweep
+	if (sweep_direction == SweepUp)
+		while (tempItem != NULL && tempItem->target_floor <= elevator->position)
+			tempItem = tempItem->next;
+	else
+		while (tempItem != NULL && tempItem->target_floor >= elevator->position)
+			tempItem = tempItem->next;
+
 	// Getting all stops
-	TargetQueueItem *tempItem = target_queue_peek(elevator->q_up);
 	while (tempItem != NULL)
 	{
 		stops[tempItem->target_floor] = true;
@@ -109,7 +156,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 		tempItem = tempItem->next;
 	}
 
-	tempItem = target_queue_peek(elevator->q_down);
+	tempItem = target_queue_peek(secondQueue);
 	while (tempItem != NULL)
 	{
 		stops[elevator->top_floor + tempItem->target_floor] = true;
@@ -120,8 +167,44 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 		tempItem = tempItem->next;
 	}
 
+	tempItem = target_queue_peek(firstQueue);
+	while (tempItem != NULL)
+	{
+		if (sweep_direction == SweepUp && tempItem->target_floor >= elevator->position)
+			break;
+		else if (sweep_direction == SweepDown && tempItem->target_floor <= elevator->position)
+			break;
+
+		stops[elevator->top_floor * 2 + tempItem->target_floor] = true;
+
+		if (tempItem->probable_extra_target != -1)
+			stops[elevator->top_floor * 2 + tempItem->probable_extra_target] = true;
+
+		tempItem = tempItem->next;
+	}
+
 	// Adding probable extra target for this item
-	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type)] = true;
+	int stopOffset = 0;
+	if (sweep_direction == floorButtonPressDesc->type)
+	{
+		bool afterElevatorUp = (sweep_direction == SweepUp && floorButtonPressDesc->floor >= elevator->position);
+		bool afterElevatorDown = (sweep_direction == SweepDown && floorButtonPressDesc->floor <= elevator->position);
+		bool afterElevator = afterElevatorUp || afterElevatorDown;
+		if (afterElevator)
+		{
+			stopOffset = 0;
+		}
+		else
+		{
+			stopOffset = elevator->top_floor * 2;
+		}
+	}
+	else
+	{
+		stopOffset = elevator->top_floor * 2;
+	}
+
+	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type) + stopOffset] = true;
 
 	// This is where we are supposed to simulate the sweeep in both directions.
 	// TODO: Create the algorithm.
