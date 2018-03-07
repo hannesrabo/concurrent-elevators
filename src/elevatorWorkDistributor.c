@@ -123,7 +123,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	// Adding probable extra target for this item
 	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type)] = true;
 
-		// This is where we are supposed to simulate the sweeep in both directions.
+	// This is where we are supposed to simulate the sweeep in both directions.
 	// TODO: Create the algorithm.
 
 	return -1;
