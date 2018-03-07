@@ -129,10 +129,12 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	if (sweep_direction == SweepUp)
 	{
 		firstQueue = elevator->q_up;
+		secondQueue = elevator->q_down;
 	}
 	else
 	{
 		firstQueue = elevator->q_down;
+		secondQueue = elevator->q_up;
 	}
 
 	tempItem = target_queue_peek(firstQueue);
