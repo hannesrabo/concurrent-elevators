@@ -203,7 +203,6 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	{
 		stopOffset = elevator->top_floor * 2;
 	}
-
 	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type) + stopOffset] = true;
 
 	// This is where we are supposed to simulate the sweeep in both directions.
