@@ -182,8 +182,8 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	while (tempItem != NULL)
 	{
 		// Return -1 if target already exists
-		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
-		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == GoingUp);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == GoingDown);
 		if ((sameDirectionUp || sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
 			return -1;
 
@@ -199,8 +199,8 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	while (tempItem != NULL)
 	{
 		// Return -1 if target already exists
-		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
-		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == GoingUp);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == GoingDown);
 		if ((!sameDirectionUp && !sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
 			return -1;
 
@@ -216,8 +216,8 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	while (tempItem != NULL)
 	{
 		// Return -1 if target already exists
-		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
-		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == GoingUp);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == GoingDown);
 		if ((sameDirectionUp || sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
 			return -1;
 

@@ -27,10 +27,12 @@ int main(int argc, char *argv[])
 {
 	char hostname[30];
 	int port = 4711;
+	int numberOfElevators = 1;
+	int numberOfFloors = 5;
 
-	if (argc != 3)
+	if (argc != 5)
 	{
-		fprintf(stderr, "Usage: %s host-name port\n", argv[0]);
+		fprintf(stderr, "Usage: %s host-name port numberOfElevators numberOfFloors\n", argv[0]);
 		fflush(stderr);
 		exit(-1);
 	}
@@ -43,10 +45,21 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	initHW(hostname, port);
+	if ((numberOfElevators = atoi(argv[3])) <= 0)
+	{
+		fprintf(stderr, "Not enough elevators: %s\n", argv[3]);
+		fflush(stderr);
+		exit(-1);
+	}
 
-	int numberOfElevators = 1;
-	int numberOfFloors = 5;
+	if ((numberOfFloors = atoi(argv[4])) <= 0)
+	{
+		fprintf(stderr, "Not enough floors: %s\n", argv[4]);
+		fflush(stderr);
+		exit(-1);
+	}
+
+	initHW(hostname, port);
 
 	pthread_mutex_t sendMutex;
 	pthread_mutex_init(&sendMutex, NULL);
