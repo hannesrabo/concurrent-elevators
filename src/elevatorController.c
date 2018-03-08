@@ -37,6 +37,10 @@ void *ElevatorController(void *elevator_status_arg)
 	ElevatorStatus *status = (ElevatorStatus *)elevator_status_arg;
 	EventQueueItem *nextEvent;
 
+	pthread_mutex_lock(&status->sendMutex);
+	whereIs(status->id);
+	pthread_mutex_unlock(&status->sendMutex);
+
 	// Handle events
 	while (1)
 	{

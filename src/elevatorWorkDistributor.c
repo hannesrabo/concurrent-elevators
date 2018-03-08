@@ -26,6 +26,10 @@ void *ElevatorWorkDistributor(void *argument)
 	EventQueue *events = ewdarg->events;
 	EventQueueItem *nextEvent;
 
+	pthread_mutex_lock(&ewdarg->sendMutex);
+	getSpeed();
+	pthread_mutex_unlock(&ewdarg->sendMutex);
+
 	while (1)
 	{
 		nextEvent = event_queue_pop(events);
