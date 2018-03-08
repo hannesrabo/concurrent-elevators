@@ -81,6 +81,8 @@ int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus 
 	for (current_index = 1; current_index <= numberOfElevators; current_index++)
 	{
 		double temp_cost = calculate_cart_cost(floorButtonPressDesc, elevators[current_index]);
+		if (temp_cost == -1) // If target already exists
+			return current_index;
 		if (best_index_cost == -1 || temp_cost < best_index_cost)
 		{
 			best_index_cost = temp_cost;
@@ -179,6 +181,12 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	// Adding all stops
 	while (tempItem != NULL)
 	{
+		// Return -1 if target already exists
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		if ((sameDirectionUp || sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
+			return -1;
+
 		stops[tempItem->target_floor] = true;
 
 		if (tempItem->probable_extra_target != -1)
@@ -190,6 +198,12 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	tempItem = target_queue_peek(secondQueue);
 	while (tempItem != NULL)
 	{
+		// Return -1 if target already exists
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		if ((!sameDirectionUp && !sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
+			return -1;
+
 		stops[elevator->top_floor + tempItem->target_floor] = true;
 
 		if (tempItem->probable_extra_target != -1)
@@ -201,6 +215,12 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	tempItem = target_queue_peek(firstQueue);
 	while (tempItem != NULL)
 	{
+		// Return -1 if target already exists
+		bool sameDirectionUp = (sweep_direction == SweepUp && floorButtonPressDesc->type == Up);
+		bool sameDirectionDown = (sweep_direction == SweepDown && floorButtonPressDesc->type == Down);
+		if ((sameDirectionUp || sameDirectionDown) && tempItem->target_floor == floorButtonPressDesc->floor)
+			return -1;
+
 		if (sweep_direction == SweepUp && tempItem->target_floor >= elevator->position)
 			break;
 		else if (sweep_direction == SweepDown && tempItem->target_floor <= elevator->position)
