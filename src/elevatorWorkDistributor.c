@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include <math.h>
 #include "elevatorWorkDistributor.h"
 #include "elevators.h"
 #include "elevatorController.h"
@@ -90,6 +91,30 @@ int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus 
 	return best_index;
 }
 
+int getTargetOffset(SweepDirection elevatorDirection, SweepDirection targetDirection, int targetFloor, double elevatorPosition, int top_floor)
+{
+	if (elevatorDirection == targetDirection)
+	{
+		bool afterElevatorUp = (elevatorDirection == SweepUp && targetFloor >= elevatorPosition);
+		bool afterElevatorDown = (elevatorDirection == SweepDown && targetFloor <= elevatorPosition);
+		bool afterElevator = afterElevatorUp || afterElevatorDown;
+		if (afterElevator)
+		{
+			return 0;
+		}
+		else
+		{
+			return top_floor * 2;
+		}
+	}
+	else
+	{
+		return top_floor;
+	}
+}
+
+// TODO!!!! Add return -1 if elevator already has in queue
+
 /**
  * Calculate the cost when adding this item to this cart.
  */
@@ -151,7 +176,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 		while (tempItem != NULL && tempItem->target_floor >= elevator->position)
 			tempItem = tempItem->next;
 
-	// Getting all stops
+	// Adding all stops
 	while (tempItem != NULL)
 	{
 		stops[tempItem->target_floor] = true;
@@ -189,30 +214,27 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 		tempItem = tempItem->next;
 	}
 
-	// Adding probable extra target for this item
-	int stopOffset = 0;
-	if (sweep_direction == floorButtonPressDesc->type)
-	{
-		bool afterElevatorUp = (sweep_direction == SweepUp && floorButtonPressDesc->floor >= elevator->position);
-		bool afterElevatorDown = (sweep_direction == SweepDown && floorButtonPressDesc->floor <= elevator->position);
-		bool afterElevator = afterElevatorUp || afterElevatorDown;
-		if (afterElevator)
-		{
-			stopOffset = 0;
-		}
-		else
-		{
-			stopOffset = elevator->top_floor * 2;
-		}
-	}
-	else
-	{
-		stopOffset = elevator->top_floor * 2;
-	}
-	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type) + stopOffset] = true;
+	// Adding target and probable extra target for this item
+	SweepDirection targetDirection = floorButtonPressDesc->type == GoingUp ? SweepUp : SweepDown;
+	int targetOffset = getTargetOffset(elevator->sweep_direction, targetDirection, floorButtonPressDesc->floor, elevator->position, elevator->top_floor);
+	int probableExtraTarget = getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type);
+	int probableExtraTargetOffset = getTargetOffset(elevator->sweep_direction, targetDirection, probableExtraTarget, elevator->position, elevator->top_floor);
+	stops[floorButtonPressDesc->floor + targetOffset] = true;
+	stops[getProbableExtraTarget(elevator->top_floor, floorButtonPressDesc->floor, floorButtonPressDesc->type) + probableExtraTargetOffset] = true;
 
 	// This is where we are supposed to simulate the sweeep in both directions.
-	// TODO: Create the algorithm.
+	int floorPoint = 1;
+	int doorPoint = 2;
+	int points = 0;
+	int lastStop = elevator->sweep_direction == SweepUp ? floor(elevator->position) : ceil(elevator->position);
+	// Start at elevetors position
+	for (i = lastStop; i < elevator->top_floor * 3; i++)
+	{
+		if (stops[i])
+		{
+			points += doorPoint + (i - lastStop) * floorPoint;
+		}
+	}
 
-	return -1;
+	return points;
 }
