@@ -109,12 +109,13 @@ int main(int argc, char *argv[])
 
 ElevatorStatus **allocate_elevator_information(int numberOfElevators, int numberOfFloors, pthread_mutex_t sendMutex)
 {
-	ElevatorStatus **elevators = (ElevatorStatus **)malloc(sizeof(ElevatorStatus *) * numberOfElevators);
+	ElevatorStatus **elevators = (ElevatorStatus **)malloc(sizeof(ElevatorStatus *) * (numberOfElevators + 1));
 
 	int i;
 	for (i = 1; i <= numberOfElevators; i++)
 	{
 		elevators[i] = (ElevatorStatus *)malloc(sizeof(ElevatorStatus));
+		printf("Allocated nr: %d\n", i);
 
 		elevators[i]->id = i;
 		elevators[i]->sendMutex = sendMutex; // shared

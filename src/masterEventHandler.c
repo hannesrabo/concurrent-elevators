@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <pthread.h>
+#include <string.h>
 #include <stdlib.h>
 
 // #define mem_test
@@ -65,7 +66,13 @@ void masterEventHandler(ElevatorWorkDistributorArgument *ewdarg)
 
 			case Speed:
 				for (i = 1; i <= numberOfElevators; i++)
-					event_queue_push(elevators[i]->events, item);
+				{
+					EventQueueItem *tempItem = event_queue_create_element(item->type, NULL);
+					tempItem->event = (EventDesc *)malloc(sizeof(EventDesc));
+					memcpy(tempItem->event, item->event, sizeof(EventDesc));
+					event_queue_push(elevators[i]->events, tempItem);
+				}
+				event_queue_free_element(item);
 				break;
 
 			case Error:
