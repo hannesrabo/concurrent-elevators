@@ -15,7 +15,7 @@ start-elevator-controller-1-5: elevator-controler
 	./$(TARGET)/elevator-controler 127.0.0.1 4711 1 5
 
 start-elevator-controller-5-5: elevator-controler
-	./$(TARGET)/elevator-controler 127.0.0.1 4711 3 5
+	./$(TARGET)/elevator-controler 127.0.0.1 4711 5 5
 
 elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eventQueue.c $(SRC_FILES)/targetQueue.c $(SRC_FILES)/elevatorController.c $(SRC_FILES)/elevatorWorkDistributor.c $(SRC_FILES)/masterEventHandler.c
 	@mkdir -p $(TARGET)
