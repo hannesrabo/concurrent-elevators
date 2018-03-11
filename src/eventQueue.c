@@ -32,7 +32,6 @@ EventQueueItem *event_queue_pop(EventQueue *q)
 {
 	// Wait for a item to be available
 	pthread_mutex_lock(&q->read_mutex);
-	pthread_mutex_lock(&q->write_mutex);
 
 	// Wait if there is no elements in the queue.
 	if (q->front == NULL)
@@ -41,7 +40,6 @@ EventQueueItem *event_queue_pop(EventQueue *q)
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 
-	pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 	return temp;
 }
