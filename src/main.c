@@ -115,7 +115,7 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators, int number
 	for (i = 1; i <= numberOfElevators; i++)
 	{
 		elevators[i] = (ElevatorStatus *)malloc(sizeof(ElevatorStatus));
-		printf("Allocated nr: %d\n", i);
+		printf("Allocated elevator nr: %d\n", i);
 
 		elevators[i]->id = i;
 		elevators[i]->sendMutex = sendMutex; // shared
@@ -131,6 +131,8 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators, int number
 		elevators[i]->sweep_direction = SweepIdle;
 		elevators[i]->door_status = DoorsClosed;
 	}
+
+	printf("All elevators allocated\n");
 
 	return elevators;
 }
