@@ -23,6 +23,7 @@ void handleTargets(ElevatorStatus *status);
 void handleDoorStatus(ElevatorStatus *status);
 void handleCabinButton(ElevatorStatus *status, int floorNumber);
 void handleFloorButton(ElevatorStatus *status, int floorNumber, FloorButtonType type);
+void testMotor(ElevatorStatus *status);
 
 double get_time()
 {
@@ -166,45 +167,11 @@ void handleTargets(ElevatorStatus *status)
 	// Cart is not doing anything: Get a new target!
 	if (status->sweep_direction == SweepIdle)
 	{
-		// No work
-		if (item == NULL)
-			return;
-
-		// If we are at the correct floor!
-		if (fabs(item->target_floor - status->position) < DELTA_POSITION)
-		{
-			// This is not a real sweap
-			status->sweep_direction = SweepIdle;
-			return;
-		}
-
-		// Get going now! (activate motors in relevant direction)
-		pthread_mutex_lock(&status->sendMutex);
-
-		if (item->target_floor > status->position)
-		{
-			status->sweep_direction = SweepUp;
-			handleMotor(status->id, MotorUp);
-		}
-		else
-		{
-			status->sweep_direction = SweepDown;
-			handleMotor(status->id, MotorDown);
-		}
-
-		pthread_mutex_unlock(&status->sendMutex);
+		return;
 	}
 	// (cart is doing a sweep) : Continue in the same direction as before stop.
 	else
 	{
-		// Start ideling
-		if (item == NULL)
-		{
-			status->sweep_direction = SweepIdle;
-			printf("[INFO](%d) Now idle!\n", status->id);
-			return;
-		}
-
 		int target_floor = item->target_floor;
 
 		// We are already at the correct floor (open doors)
@@ -224,25 +191,27 @@ void handleTargets(ElevatorStatus *status)
 
 			status->door_action_time = get_time();
 			status->door_status = DoorsOpening;
+			status->currentMotorState = MotorStop;
 		}
-		// Not on the correct floor. Time to continue sweep!
-		else
-		{
-			// printf("[INFO](%d) Continues sweep!\n", status->id);
-			pthread_mutex_lock(&status->sendMutex);
 
+		else if (status->currentMotorState == MotorStop)
+		{
 			if (item->target_floor > status->position)
 			{
 				status->sweep_direction = SweepUp;
+				pthread_mutex_lock(&status->sendMutex);
 				handleMotor(status->id, MotorUp);
+				pthread_mutex_unlock(&status->sendMutex);
+				status->currentMotorState = MotorUp;
 			}
 			else
 			{
 				status->sweep_direction = SweepDown;
+				pthread_mutex_lock(&status->sendMutex);
 				handleMotor(status->id, MotorDown);
+				pthread_mutex_unlock(&status->sendMutex);
+				status->currentMotorState = MotorDown;
 			}
-
-			pthread_mutex_unlock(&status->sendMutex);
 		}
 	}
 }
@@ -263,6 +232,7 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 		pthread_mutex_lock(&status->sendMutex);
 		handleMotor(status->id, MotorStop);
 		pthread_mutex_unlock(&status->sendMutex);
+		status->currentMotorState = MotorStop;
 
 		printf("[INFO](%d) Panic mode. Stopping everything!\n", status->id);
 
@@ -283,6 +253,8 @@ void handleCabinButton(ElevatorStatus *status, int floorNumber)
 		target_queue_push(status->q_down, targetItem);
 		printf("[INFO](%d) Cabin will visit floor %d on the way down. (internal)\n", status->id, floorNumber);
 	}
+
+	testMotor(status);
 }
 
 /**
@@ -331,4 +303,22 @@ void handleFloorButton(ElevatorStatus *status, int floorNumber, FloorButtonType 
 
 	TargetQueueItem *targetItem = target_queue_create_item_w_target(floorNumber, probable_extra_target);
 	target_queue_push(tempQueue, targetItem);
+
+	testMotor(status);
+}
+
+void testMotor(ElevatorStatus *status)
+{
+	if (status->currentMotorState == MotorUp)
+	{
+		pthread_mutex_lock(&status->sendMutex);
+		handleMotor(status->id, MotorUp);
+		pthread_mutex_unlock(&status->sendMutex);
+	}
+	else if (status->currentMotorState == MotorDown)
+	{
+		pthread_mutex_lock(&status->sendMutex);
+		handleMotor(status->id, MotorDown);
+		pthread_mutex_unlock(&status->sendMutex);
+	}
 }

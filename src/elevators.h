@@ -34,6 +34,7 @@ typedef struct
 	// Current
 	double speed;
 	double position;
+	MotorAction currentMotorState;
 
 	// Current sweep
 	SweepDirection sweep_direction;

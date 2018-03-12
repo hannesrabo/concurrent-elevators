@@ -126,6 +126,7 @@ ElevatorStatus **allocate_elevator_information(int numberOfElevators, int number
 
 		elevators[i]->position = 0;
 		elevators[i]->speed = 0;
+		elevators[i]->currentMotorState = MotorStop;
 		elevators[i]->door_action_time = 0;
 		elevators[i]->top_floor = numberOfFloors;
 		elevators[i]->sweep_direction = SweepIdle;
