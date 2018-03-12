@@ -132,7 +132,7 @@ TargetQueueItem *get_target_item(ElevatorStatus *status)
 
 	if (status->sweep_direction == SweepUp)
 	{
-		item = target_queue_peek_offset(status->q_up, (int)status->position);
+		item = target_queue_peek_offset(status->q_up, (int)ceil(status->position));
 		if (item == NULL)
 		{ // Switch direction! (we finished this direction)
 			item = target_queue_peek(status->q_down);
@@ -141,7 +141,7 @@ TargetQueueItem *get_target_item(ElevatorStatus *status)
 	}
 	else
 	{ // SweepDown
-		item = target_queue_peek_offset(status->q_down, (int)status->position);
+		item = target_queue_peek_offset(status->q_down, (int)floor(status->position) + 1);
 		if (item == NULL)
 		{ // Switch direction
 			item = target_queue_peek(status->q_up);
