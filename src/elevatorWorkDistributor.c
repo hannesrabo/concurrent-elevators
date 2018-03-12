@@ -95,12 +95,12 @@ int get_optimal_cart(FloorButtonPressDesc *floorButtonPressDesc, ElevatorStatus 
 
 int getTargetOffset(SweepDirection elevatorDirection, SweepDirection targetDirection, int targetFloor, double elevatorPosition, int top_floor)
 {
-	if (elevatorDirection == targetDirection)
+	if (elevatorDirection == targetDirection || elevatorDirection == SweepIdle)
 	{
 		bool afterElevatorUp = (elevatorDirection == SweepUp && targetFloor >= elevatorPosition);
 		bool afterElevatorDown = (elevatorDirection == SweepDown && targetFloor <= elevatorPosition);
 		bool afterElevator = afterElevatorUp || afterElevatorDown;
-		if (afterElevator)
+		if (afterElevator || elevatorDirection == SweepIdle)
 		{
 			return 0;
 		}
@@ -246,7 +246,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 	int floorPoint = 1;
 	int doorPoint = 3;
 	int points = 0;
-	int lastStop = elevator->sweep_direction == SweepUp ? floor(elevator->position) : ceil(elevator->position);
+	int lastStop = elevator->sweep_direction == SweepUp ? ceil(elevator->position) : floor(elevator->position);
 	// Start at elevetors position
 	for (i = lastStop; i < elevator->top_floor * 3; i++)
 	{
