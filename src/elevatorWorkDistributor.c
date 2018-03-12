@@ -253,6 +253,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 		if (stops[i])
 		{
 			points += doorPoint + (i - lastStop) * floorPoint;
+			lastStop = i;
 		}
 	}
 
