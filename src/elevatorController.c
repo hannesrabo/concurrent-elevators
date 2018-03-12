@@ -213,6 +213,20 @@ void handleTargets(ElevatorStatus *status)
 				status->currentMotorState = MotorDown;
 			}
 		}
+		else if (status->currentMotorState == MotorUp && item->target_floor < status->position)
+		{
+			pthread_mutex_lock(&status->sendMutex);
+			handleMotor(status->id, MotorDown);
+			pthread_mutex_unlock(&status->sendMutex);
+			status->currentMotorState = MotorDown;
+		}
+		else if (status->currentMotorState == MotorDown && item->target_floor > status->position)
+		{
+			pthread_mutex_lock(&status->sendMutex);
+			handleMotor(status->id, MotorUp);
+			pthread_mutex_unlock(&status->sendMutex);
+			status->currentMotorState = MotorUp;
+		}
 	}
 }
 
