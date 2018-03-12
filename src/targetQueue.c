@@ -31,6 +31,7 @@ TargetQueueItem *target_queue_peek(TargetQueue *q)
 
 TargetQueueItem *target_queue_peek_offset(TargetQueue *q, int offset)
 {
+	pthread_mutex_lock(&q->read_mutex);
 	if (q == NULL)
 		return NULL;
 
@@ -47,6 +48,8 @@ TargetQueueItem *target_queue_peek_offset(TargetQueue *q, int offset)
 			temp = temp->next;
 	}
 
+	pthread_mutex_unlock(&q->read_mutex);
+
 	return temp;
 }
 
@@ -56,12 +59,14 @@ TargetQueueItem *target_queue_pop(TargetQueue *q)
 		return NULL;
 
 	pthread_mutex_lock(&q->read_mutex);
+	// pthread_mutex_lock(&q->write_mutex);
 
 	TargetQueueItem *temp = q->front;
 	q->front = q->front->next;
 
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
-	temp->containing_queue = NULL;
+	temp->containing_queue = NULL; // Remove item from the queue completely
 
 	return temp;
 }
@@ -72,7 +77,7 @@ TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
 		return NULL;
 
 	pthread_mutex_lock(&q->read_mutex);
-	pthread_mutex_lock(&q->write_mutex);
+	// pthread_mutex_lock(&q->write_mutex);
 
 	TargetQueueItem temp;
 	temp.target_floor = offset;
@@ -86,7 +91,7 @@ TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
 		if (cmp > 0)
 		// Does not exist
 		{
-			pthread_mutex_unlock(&q->write_mutex);
+			// pthread_mutex_unlock(&q->write_mutex);
 			pthread_mutex_unlock(&q->read_mutex);
 
 			return NULL;
@@ -95,7 +100,7 @@ TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
 		// We found the item.
 		{
 			previous->next = current->next;
-			pthread_mutex_unlock(&q->write_mutex);
+			// pthread_mutex_unlock(&q->write_mutex);
 			pthread_mutex_unlock(&q->read_mutex);
 
 			return current;
@@ -103,7 +108,7 @@ TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
 		previous = current;
 		current = current->next;
 	}
-	pthread_mutex_unlock(&q->write_mutex);
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 
 	return NULL;
@@ -112,7 +117,7 @@ TargetQueueItem *target_queue_pop_offset(TargetQueue *q, int offset)
 void target_queue_push(TargetQueue *q, TargetQueueItem *item)
 {
 	pthread_mutex_lock(&q->read_mutex);
-	pthread_mutex_lock(&q->write_mutex);
+	// pthread_mutex_lock(&q->write_mutex);
 
 	// This is where we do the sorting and put it in the correct spot.
 	TargetQueueItem *current = q->front;
@@ -131,7 +136,7 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item)
 		{
 			printf("Item discarded.\n");
 			free(item);
-			pthread_mutex_unlock(&q->write_mutex);
+			// pthread_mutex_unlock(&q->write_mutex);
 			pthread_mutex_unlock(&q->read_mutex);
 			return;
 		}
@@ -160,7 +165,7 @@ void target_queue_push(TargetQueue *q, TargetQueueItem *item)
 		item->next = current;
 	}
 
-	pthread_mutex_unlock(&q->write_mutex);
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 }
 
@@ -176,7 +181,7 @@ void target_queue_free_and_remove_element(TargetQueueItem *item)
 	}
 
 	pthread_mutex_lock(&item->containing_queue->read_mutex);
-	pthread_mutex_lock(&item->containing_queue->write_mutex);
+	// pthread_mutex_lock(&item->containing_queue->write_mutex);
 
 	// remove it from the list
 	TargetQueueItem *current = item->containing_queue->front;
@@ -190,7 +195,7 @@ void target_queue_free_and_remove_element(TargetQueueItem *item)
 		{
 			free(item);
 
-			pthread_mutex_unlock(&item->containing_queue->write_mutex);
+			// pthread_mutex_unlock(&item->containing_queue->write_mutex);
 			pthread_mutex_unlock(&item->containing_queue->read_mutex);
 			return;
 		}
@@ -205,7 +210,7 @@ void target_queue_free_and_remove_element(TargetQueueItem *item)
 
 			free(item);
 
-			pthread_mutex_unlock(&item->containing_queue->write_mutex);
+			// pthread_mutex_unlock(&item->containing_queue->write_mutex);
 			pthread_mutex_unlock(&item->containing_queue->read_mutex);
 			return;
 		}
@@ -216,7 +221,7 @@ void target_queue_free_and_remove_element(TargetQueueItem *item)
 	// does not exist
 	free(item);
 
-	pthread_mutex_unlock(&item->containing_queue->write_mutex);
+	// pthread_mutex_unlock(&item->containing_queue->write_mutex);
 	pthread_mutex_unlock(&item->containing_queue->read_mutex);
 }
 

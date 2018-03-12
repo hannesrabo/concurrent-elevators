@@ -20,7 +20,7 @@ EventQueue *event_queue_create()
 
 	pthread_cond_init(&q->hasElements, NULL);
 	pthread_mutex_init(&q->read_mutex, NULL);
-	pthread_mutex_init(&q->write_mutex, NULL);
+	// pthread_mutex_init(&q->write_mutex, NULL);
 
 	return q;
 }
@@ -32,6 +32,7 @@ EventQueueItem *event_queue_pop(EventQueue *q)
 {
 	// Wait for a item to be available
 	pthread_mutex_lock(&q->read_mutex);
+	// pthread_mutex_lock(&q->write_mutex);
 
 	// Wait if there is no elements in the queue.
 	if (q->front == NULL)
@@ -40,6 +41,7 @@ EventQueueItem *event_queue_pop(EventQueue *q)
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 	return temp;
 }
@@ -77,9 +79,12 @@ EventQueueItem *event_queue_timed_pop(EventQueue *q, long time_ms)
 		}
 	}
 
+	// pthread_mutex_lock(&q->write_mutex);
+
 	EventQueueItem *temp = q->front;
 	q->front = q->front->next;
 
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 	return temp;
 }
@@ -91,7 +96,7 @@ void event_queue_push(EventQueue *q, EventQueueItem *item)
 {
 	// We need to aquire both locks here....
 	pthread_mutex_lock(&q->read_mutex);
-	pthread_mutex_lock(&q->write_mutex);
+	// pthread_mutex_lock(&q->write_mutex);
 
 	item->next = NULL;
 
@@ -107,7 +112,7 @@ void event_queue_push(EventQueue *q, EventQueueItem *item)
 		q->last = q->last->next; // Update the end.
 	}
 
-	pthread_mutex_unlock(&q->write_mutex);
+	// pthread_mutex_unlock(&q->write_mutex);
 	pthread_mutex_unlock(&q->read_mutex);
 
 	// Signal any waiting processes.
