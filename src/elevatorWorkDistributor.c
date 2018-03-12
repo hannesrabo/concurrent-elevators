@@ -244,7 +244,7 @@ double calculate_cart_cost(FloorButtonPressDesc *floorButtonPressDesc, ElevatorS
 
 	// This is where we are supposed to simulate the sweeep in both directions.
 	int floorPoint = 1;
-	int doorPoint = 2;
+	int doorPoint = 3;
 	int points = 0;
 	int lastStop = elevator->sweep_direction == SweepUp ? floor(elevator->position) : ceil(elevator->position);
 	// Start at elevetors position
