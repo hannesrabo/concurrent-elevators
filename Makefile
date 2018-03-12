@@ -14,6 +14,9 @@ all: elevator-controler $(TARGET)/hardwareAPI.o
 start-elevator-controller-1-5: elevator-controler
 	./$(TARGET)/elevator-controler 127.0.0.1 4711 1 5
 
+start-elevator-controller-2-5: elevator-controler
+	./$(TARGET)/elevator-controler 127.0.0.1 4711 2 5
+
 start-elevator-controller-5-5: elevator-controler
 	./$(TARGET)/elevator-controler 127.0.0.1 4711 5 5
 
@@ -23,6 +26,9 @@ elevator-controler: $(SRC_FILES)/main.c $(TARGET)/hardwareAPI.o $(SRC_FILES)/eve
 
 start-elevator: elevator/lib/elevator.jar
 	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 5 -tcp 4711
+
+start-elevator-2: elevator/lib/elevator.jar
+	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 2 -tcp 4711
 
 start-elevator-1: elevator/lib/elevator.jar
 	java -classpath elevator/lib/elevator.jar elevator.Elevators -top 5 -number 1 -tcp 4711
